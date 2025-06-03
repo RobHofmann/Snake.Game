@@ -63,11 +63,19 @@ Key Components:
 
 2. **CSS Styling and Layout**
 
-   - Game board dimensions: 600×600 pixels (30×30 cells)
+   - Game board dimensions: 600×600 pixels (30×30 cells) on desktop
+   - Responsive scaling for mobile devices with max-width viewport
    - Power-up panel below game board: Full width × 50 pixels
    - Semi-transparent backgrounds for UI overlays
-   - Responsive layout with breakpoints
+   - Responsive layout with breakpoints:
+     - Desktop: >768px - Full size with margins
+     - Tablet: 481-768px - Scaled to fit with touch controls 
+     - Mobile: ≤480px - Optimized layout with larger touch targets
    - Neon glow effects for game elements
+   - Mobile-specific UI elements:
+     - Touch control overlay (on-screen D-pad)
+     - Larger buttons and touch targets (44px minimum)
+     - Safe area margins for notched devices
    - Horizontal layout for power-up indicators
      - Icon with color-matched glow
      - Effect name in white
@@ -78,8 +86,14 @@ Key Components:
 
    - SignalR connection management
    - Input handling (keyboard and touch)
+     - Keyboard: Arrow keys and WASD
+     - Touch: Swipe gesture detection with momentum calculations
+     - Touch: On-screen directional buttons with haptic feedback (where available)
+     - Input debouncing and direction queue management
    - Game state management
    - UI updates and animations
+   - Mobile device detection and adaptation
+   - Touch event optimization for performance
 
 4. **Canvas Rendering Engine**
    - Layer-based drawing system:
@@ -211,6 +225,14 @@ src/
 - Repository pattern with the Microsoft.Azure.Cosmos client SDK
 - Optimistic concurrency for score updates
 
+#### Database Initialization
+
+- **Automatic Setup**: Database and containers are created automatically on application startup
+- **Idempotent Operations**: Safe to run multiple times, checks for existing resources
+- **Environment Support**: Works with both local emulator and Azure production environments
+- **Container Configuration**: Proper partition keys and indexing policies applied during creation
+- **Seed Data**: Optional initial data for development and testing environments
+
 #### Scaling & Performance
 
 - Serverless capacity mode auto-scales based on demand
@@ -236,10 +258,29 @@ src/
 
 ### 4.2 Input System
 
+#### Desktop Input
 - Keyboard input handler (WASD + Arrow keys)
-- Touch input handler (swipe + on-screen controls)
-- Input state management
-- Cross-platform input normalization
+- Space bar for pause/resume and start game
+
+#### Mobile Input  
+- **Touch/Swipe Gestures**: Primary mobile input method
+  - Swipe up/down/left/right for directional control
+  - Minimum swipe distance: 30px for reliable detection
+  - Touch response time: <16ms target for 60fps
+  - Gesture threshold: 0.3 velocity ratio to prevent accidental triggers
+
+- **On-Screen Control Buttons**: Secondary mobile input method
+  - Semi-transparent directional pad (D-pad) overlay
+  - Positioned in bottom-right corner with safe area margins
+  - Only visible on touch devices (CSS media queries)
+  - Button size: 44px minimum (iOS/Android accessibility guidelines)
+  - Visual feedback on press with neon glow effects
+
+#### Cross-Platform Features
+- Input state management with debouncing
+- Automatic input method detection (touch vs keyboard)
+- Responsive control visibility based on device capabilities
+- Input normalization across platforms
 
 ### 4.3 Audio System
 

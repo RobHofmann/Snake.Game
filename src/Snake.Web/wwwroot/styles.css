@@ -159,3 +159,283 @@ button:hover {
 .leaderboard::-webkit-scrollbar-thumb:hover {
     background: rgba(77, 238, 234, 0.5);
 }
+
+/* Mobile-specific styles and responsive design */
+
+/* Mobile touch controls */
+.mobile-controls {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    display: none; /* Hidden by default, shown on touch devices */
+    z-index: 1000;
+}
+
+.mobile-controls.show {
+    display: block;
+}
+
+.dpad {
+    position: relative;
+    width: 140px;
+    height: 140px;
+}
+
+.dpad-button {
+    position: absolute;
+    width: 44px;
+    height: 44px;
+    background-color: rgba(77, 238, 234, 0.3);
+    border: 2px solid rgba(77, 238, 234, 0.6);
+    border-radius: 8px;
+    color: #4deeea;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+    user-select: none;
+    transition: all 0.1s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 10px rgba(77, 238, 234, 0.2);
+}
+
+.dpad-button:active {
+    background-color: rgba(77, 238, 234, 0.6);
+    box-shadow: 0 0 20px rgba(77, 238, 234, 0.5);
+    transform: scale(0.95);
+}
+
+.dpad-up {
+    top: 0;
+    left: 48px;
+}
+
+.dpad-down {
+    bottom: 0;
+    left: 48px;
+}
+
+.dpad-left {
+    top: 48px;
+    left: 0;
+}
+
+.dpad-right {
+    top: 48px;
+    right: 0;
+}
+
+/* Pause button for mobile */
+.mobile-pause {
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    width: 60px;
+    height: 60px;
+    background-color: rgba(77, 238, 234, 0.3);
+    border: 2px solid rgba(77, 238, 234, 0.6);
+    border-radius: 50%;
+    color: #4deeea;
+    font-size: 24px;
+    cursor: pointer;
+    user-select: none;
+    transition: all 0.1s ease;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 10px rgba(77, 238, 234, 0.2);
+    z-index: 1000;
+}
+
+.mobile-pause.show {
+    display: flex;
+}
+
+.mobile-pause:active {
+    background-color: rgba(77, 238, 234, 0.6);
+    box-shadow: 0 0 20px rgba(77, 238, 234, 0.5);
+    transform: scale(0.95);
+}
+
+/* Hide mobile-only instructions by default */
+.mobile-only {
+    display: none;
+}
+
+/* Show mobile instructions on touch devices */
+@media (hover: none) and (pointer: coarse) {
+    .mobile-only {
+        display: list-item;
+    }
+}
+
+/* Responsive breakpoints */
+
+/* Desktop - default styles already defined above */
+
+/* Tablet (768px and below) */
+@media screen and (max-width: 768px) {
+    body {
+        padding: 10px;
+    }
+    
+    .game-container {
+        max-width: 100%;
+    }
+    
+    canvas {
+        max-width: 100%;
+        height: auto;
+    }
+    
+    .game-header {
+        font-size: 18px;
+        padding: 8px;
+    }
+    
+    .start-screen, .game-over {
+        padding: 30px;
+        max-width: 90vw;
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+    
+    .leaderboard {
+        max-height: 300px;
+    }
+    
+    .leaderboard-tabs {
+        flex-wrap: wrap;
+        gap: 5px;
+    }
+    
+    .leaderboard-tabs .tab {
+        padding: 6px 12px;
+        font-size: 12px;
+    }
+}
+
+/* Mobile (480px and below) */
+@media screen and (max-width: 480px) {
+    body {
+        padding: 5px;
+    }
+    
+    .game-header {
+        flex-direction: column;
+        gap: 10px;
+        text-align: center;
+    }
+    
+    .score, .status {
+        font-size: 20px;
+    }
+    
+    .start-screen, .game-over {
+        padding: 20px;
+        border-radius: 8px;
+    }
+    
+    .start-screen h2, .game-over h2 {
+        font-size: 24px;
+        margin-bottom: 15px;
+    }
+    
+    button {
+        padding: 15px 25px;
+        font-size: 16px;
+        touch-action: manipulation; /* Prevent zoom on touch */
+    }
+    
+    .controls {
+        font-size: 14px;
+    }
+    
+    .controls ul li {
+        margin-bottom: 8px;
+    }
+    
+    .leaderboard {
+        padding: 15px;
+        margin-top: 20px;
+        max-height: 250px;
+    }
+    
+    .leaderboard h3 {
+        font-size: 18px;
+        margin-bottom: 15px;
+    }
+    
+    .leaderboard th,
+    .leaderboard td {
+        padding: 8px 4px;
+        font-size: 12px;
+    }
+    
+    .leaderboard th:nth-child(4),
+    .leaderboard td:nth-child(4) {
+        display: none; /* Hide date column on small screens */
+    }
+    
+    /* Show mobile controls on touch devices */
+    .mobile-controls.show,
+    .mobile-pause.show {
+        display: block;
+    }
+    
+    .mobile-pause.show {
+        display: flex;
+    }
+}
+
+/* Touch device detection */
+@media (hover: none) and (pointer: coarse) {
+    .mobile-controls {
+        display: block;
+    }
+    
+    .mobile-pause {
+        display: flex;
+    }
+    
+    /* Update controls instruction for mobile */
+    .controls ul li:first-child::after {
+        content: " or touch controls";
+    }
+}
+
+/* Landscape mobile optimization */
+@media screen and (max-width: 768px) and (orientation: landscape) {
+    .start-screen, .game-over {
+        max-height: 85vh;
+        padding: 15px;
+    }
+    
+    .leaderboard {
+        max-height: 200px;
+    }
+    
+    .mobile-controls {
+        bottom: 10px;
+        right: 10px;
+    }
+    
+    .mobile-pause {
+        bottom: 10px;
+        left: 10px;
+    }
+}
+
+/* Safe area support for notched devices */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+    .mobile-controls {
+        bottom: calc(20px + env(safe-area-inset-bottom));
+        right: calc(20px + env(safe-area-inset-right));
+    }
+    
+    .mobile-pause {
+        bottom: calc(20px + env(safe-area-inset-bottom));
+        left: calc(20px + env(safe-area-inset-left));
+    }
+}

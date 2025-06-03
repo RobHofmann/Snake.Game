@@ -3,6 +3,10 @@ const CELL_SIZE = 20;
 const BOARD_SIZE = { width: 30, height: 30 };
 const API_BASE_URL = 'http://localhost:5075'; // Add API base URL
 
+// Mobile control constants
+const SWIPE_THRESHOLD = 30; // Minimum distance for swipe detection
+const SWIPE_VELOCITY_THRESHOLD = 0.3; // Minimum velocity ratio for swipe
+
 // Game variables
 let gameState = 'Ready';
 let score = 0;
@@ -12,6 +16,12 @@ let powerUps = [];
 let activePowerUpEffects = []; // Track active powerup effects with timers
 let gameStartTime = 0; // Track when game started
 let connection = null;
+
+// Mobile touch variables
+let touchStartX = 0;
+let touchStartY = 0;
+let touchStartTime = 0;
+let isTouchDevice = false;
 
 // Game state indicators
 let isShieldActive = false;
@@ -463,6 +473,162 @@ async function handleInput(key) {
     }
 }
 
+// Mobile control functions
+function detectTouchDevice() {
+    return (('ontouchstart' in window) ||
+           (navigator.maxTouchPoints > 0) ||
+           (navigator.msMaxTouchPoints > 0));
+}
+
+function setupMobileControls() {
+    isTouchDevice = detectTouchDevice();
+    
+    if (isTouchDevice) {
+        // Show mobile controls
+        const mobileControls = document.getElementById('mobileControls');
+        const mobilePause = document.getElementById('mobilePause');
+        
+        if (mobileControls) {
+            mobileControls.classList.add('show');
+        }
+        if (mobilePause) {
+            mobilePause.classList.add('show');
+        }
+        
+        // Setup touch event listeners
+        setupTouchControls();
+        setupSwipeControls();
+    }
+}
+
+function setupTouchControls() {
+    // Setup on-screen button controls
+    const dpadButtons = document.querySelectorAll('.dpad-button');
+    const mobilePause = document.getElementById('mobilePause');
+    
+    dpadButtons.forEach(button => {
+        button.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            const direction = button.dataset.direction;
+            handleMobileInput(direction);
+            
+            // Add visual feedback
+            button.style.backgroundColor = 'rgba(77, 238, 234, 0.8)';
+        });
+        
+        button.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            // Remove visual feedback
+            button.style.backgroundColor = 'rgba(77, 238, 234, 0.3)';
+        });
+        
+        // Prevent context menu on long press
+        button.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+        });
+    });
+    
+    if (mobilePause) {
+        mobilePause.addEventListener('touchstart', async (e) => {
+            e.preventDefault();
+            await handleInput(' '); // Send space key for pause
+            
+            // Visual feedback
+            mobilePause.style.backgroundColor = 'rgba(77, 238, 234, 0.8)';
+        });
+        
+        mobilePause.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            mobilePause.style.backgroundColor = 'rgba(77, 238, 234, 0.3)';
+        });
+    }
+}
+
+function setupSwipeControls() {
+    // Setup swipe gesture detection
+    const canvas = document.getElementById('gameCanvas');
+    const gameContainer = document.querySelector('.game-container');
+    
+    // Use game container as swipe target for better UX
+    const swipeTarget = gameContainer || canvas;
+    
+    swipeTarget.addEventListener('touchstart', (e) => {
+        if (e.touches.length === 1) { // Single finger only
+            const touch = e.touches[0];
+            touchStartX = touch.clientX;
+            touchStartY = touch.clientY;
+            touchStartTime = Date.now();
+        }
+    }, { passive: false });
+    
+    swipeTarget.addEventListener('touchmove', (e) => {
+        // Prevent scrolling during swipe
+        e.preventDefault();
+    }, { passive: false });
+    
+    swipeTarget.addEventListener('touchend', (e) => {
+        if (e.changedTouches.length === 1) {
+            const touch = e.changedTouches[0];
+            const touchEndX = touch.clientX;
+            const touchEndY = touch.clientY;
+            const touchEndTime = Date.now();
+            
+            handleSwipeGesture(touchStartX, touchStartY, touchEndX, touchEndY, touchEndTime - touchStartTime);
+        }
+    }, { passive: false });
+}
+
+function handleSwipeGesture(startX, startY, endX, endY, duration) {
+    const deltaX = endX - startX;
+    const deltaY = endY - startY;
+    const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+    
+    // Check if swipe meets minimum distance threshold
+    if (distance < SWIPE_THRESHOLD) {
+        return;
+    }
+    
+    // Calculate velocity (distance per millisecond)
+    const velocity = distance / duration;
+    
+    // Check if swipe meets minimum velocity threshold
+    if (velocity < SWIPE_VELOCITY_THRESHOLD) {
+        return;
+    }
+    
+    // Determine swipe direction based on larger axis
+    const absDeltaX = Math.abs(deltaX);
+    const absDeltaY = Math.abs(deltaY);
+    
+    let direction;
+    if (absDeltaX > absDeltaY) {
+        // Horizontal swipe
+        direction = deltaX > 0 ? 'right' : 'left';
+    } else {
+        // Vertical swipe
+        direction = deltaY > 0 ? 'down' : 'up';
+    }
+    
+    handleMobileInput(direction);
+}
+
+async function handleMobileInput(direction) {
+    if (!connection || gameState !== 'Playing') return;
+    
+    // Map direction to game direction
+    const directionMap = {
+        'up': 'Up',
+        'down': 'Down',
+        'left': 'Left',
+        'right': 'Right'
+    };
+    
+    const gameDirection = directionMap[direction];
+    if (gameDirection) {
+        await connection.invoke('ChangeDirection', gameDirection);
+    }
+}
+
 // Event listeners
 document.addEventListener('keydown', (e) => {
     e.preventDefault();
@@ -486,6 +652,7 @@ function gameLoop() {
 // Initialize the game
 async function init() {
     await setupSignalR();
+    setupMobileControls();
     updateUI();
     gameLoop();
     fetchLeaderboard(); // Load initial leaderboard

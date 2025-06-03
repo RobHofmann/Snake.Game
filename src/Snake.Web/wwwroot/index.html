@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Snake Game</title>
     <link rel="stylesheet" href="styles.css">
 </head>
@@ -17,12 +17,12 @@
 
         <div id="startScreen" class="start-screen">
             <h2>Snake Game</h2>
-            <p>Press Space to start</p>
-            <div class="controls">
+            <p>Press Space to start</p>            <div class="controls">
                 <p>Controls:</p>
                 <ul>
                     <li>Arrow keys or WASD to move</li>
                     <li>Space to pause/resume</li>
+                    <li class="mobile-only">Touch: Swipe or use on-screen buttons</li>
                 </ul>
             </div>
         </div>        <div id="gameOver" class="game-over hide">
@@ -50,9 +50,20 @@
                         <tbody id="leaderboardBody"></tbody>
                     </table>
                 </div>
-            </div>
+            </div>        </div>
+    </div>
+
+    <!-- Mobile touch controls -->
+    <div id="mobileControls" class="mobile-controls">
+        <div class="dpad">
+            <button class="dpad-button dpad-up" data-direction="up">↑</button>
+            <button class="dpad-button dpad-down" data-direction="down">↓</button>
+            <button class="dpad-button dpad-left" data-direction="left">←</button>
+            <button class="dpad-button dpad-right" data-direction="right">→</button>
         </div>
     </div>
+    
+    <button id="mobilePause" class="mobile-pause">⏸</button>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.0/signalr.min.js"></script>
     <script src="game.js"></script>
