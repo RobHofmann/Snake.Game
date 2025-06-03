@@ -150,7 +150,6 @@ function drawGame() {
                 
                 const centerX = powerUp.position.x * CELL_SIZE + CELL_SIZE / 2;
                 const centerY = powerUp.position.y * CELL_SIZE + CELL_SIZE / 2;
-                const size = CELL_SIZE * 0.4;
 
                 // Draw background circle for better visibility
                 ctx.shadowBlur = 15;
@@ -159,24 +158,17 @@ function drawGame() {
                 ctx.arc(centerX, centerY, CELL_SIZE * 0.45, 0, Math.PI * 2);
                 ctx.fill();
 
-                // Draw the power-up with glow
+                // Draw the power-up icon with glow
                 ctx.shadowBlur = 10;
                 ctx.shadowColor = powerUp.color;
                 ctx.fillStyle = powerUp.color;
+                ctx.font = `${CELL_SIZE * 0.6}px Arial`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
                 
-                // Draw power-up as a star
-                ctx.beginPath();
-                for (let i = 0; i < 8; i++) {
-                    const radius = i % 2 === 0 ? size : size * 0.6;
-                    const angle = (i * Math.PI) / 4;
-                    const x = centerX + radius * Math.cos(angle);
-                    const y = centerY + radius * Math.sin(angle);
-                    
-                    if (i === 0) ctx.moveTo(x, y);
-                    else ctx.lineTo(x, y);
-                }
-                ctx.closePath();
-                ctx.fill();
+                // Get the appropriate icon for this power-up type
+                const icon = getPowerUpIcon(powerUp.type);
+                ctx.fillText(icon, centerX, centerY);
                 
                 // Draw expiration progress ring
                 if (powerUp.remainingExpirationTimePercentage < 1) {
@@ -253,6 +245,22 @@ function getPowerUpColor(type) {
             return '#39FF14';   // Green neon
         default:
             return '#FFFFFF';
+    }
+}
+
+// Utility function to get power-up icon based on type
+function getPowerUpIcon(type) {
+    switch (type) {
+        case 'SpeedBoost':
+            return '⚡';
+        case 'Shield':
+            return '🛡️';
+        case 'DoublePoints':
+            return '2️⃣';
+        case 'Shrink':
+            return '🌿';
+        default:
+            return '?';
     }
 }
 
