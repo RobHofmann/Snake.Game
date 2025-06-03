@@ -207,13 +207,11 @@ function drawGame() {
         });
     }
     
-    ctx.restore();
-
-    // Draw active power-up indicators in a semi-transparent panel
+    ctx.restore();    // Draw active power-up indicators in a semi-transparent panel
     const indicators = [];
-    if (isShieldActive) indicators.push({ color: '#FFFF00', text: '🛡️ Shield Active', icon: '🛡️' });
-    if (isDoublePointsActive) indicators.push({ color: '#FF00FF', text: '2️⃣ Double Points Active', icon: '2️⃣' });
-    if (speedMultiplier > 1.0) indicators.push({ color: '#0080FF', text: '⚡ Speed Boost Active', icon: '⚡' });
+    if (isShieldActive) indicators.push({ color: '#FFFF00', text: 'Shield Active', icon: '🛡️' });
+    if (isDoublePointsActive) indicators.push({ color: '#FF00FF', text: 'Double Points Active', icon: '2️⃣' });
+    if (speedMultiplier > 1.0) indicators.push({ color: '#0080FF', text: 'Speed Boost Active', icon: '⚡' });
 
     if (indicators.length > 0) {
         // Draw semi-transparent panel
