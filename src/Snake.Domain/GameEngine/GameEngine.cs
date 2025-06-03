@@ -175,21 +175,30 @@ public class GameEngine : IGameEngine
             {
                 _powerUps.RemoveAt(i);
                 continue;
-            }
-
-            // Check collision with snake head and collect power-up
+            }            // Check collision with snake head and collect power-up
             if (_snake[0] == powerUp.Position)
             {
                 // Award points for collecting power-up (50 base points, doubled if Double Points active)
                 var powerUpPoints = 50;
                 _score += _isDoublePointsActive ? powerUpPoints * 2 : powerUpPoints;
 
-                ActivatePowerUp(powerUp);
-                
-                // Move to active effects list if it has a duration > 0
-                if (powerUp.EffectDurationInSeconds > 0)
+                // Check if the same powerup type is already active and reset its timer
+                var existingEffect = _activePowerUpEffects.FirstOrDefault(p => p.Type == powerUp.Type);
+                if (existingEffect != null)
                 {
-                    _activePowerUpEffects.Add(powerUp);
+                    // Reset the timer for the existing effect
+                    existingEffect.Activate(); // This will reset ActivationTime and DeactivationTime
+                }
+                else
+                {
+                    // Activate new powerup
+                    ActivatePowerUp(powerUp);
+                    
+                    // Move to active effects list if it has a duration > 0
+                    if (powerUp.EffectDurationInSeconds > 0)
+                    {
+                        _activePowerUpEffects.Add(powerUp);
+                    }
                 }
                 
                 // Remove from uncollected powerups list

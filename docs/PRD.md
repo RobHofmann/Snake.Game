@@ -28,19 +28,19 @@ A modern web-based implementation of the classic Snake game, featuring retro pix
 1. **Speed Boost** (blue neon)
 
    - Temporary increased movement speed
-   - Duration: 5 seconds
+   - Duration: 15 seconds
    - Random disappear time: 5-15 seconds
 
 2. **Shield** (yellow neon)
 
    - Temporary invincibility from wall/self collision
-   - Duration: 3 seconds
+   - Duration: 10 seconds
    - Random disappear time: 8-20 seconds
 
 3. **Double Points** (pink neon)
 
    - Points multiplier (2x)
-   - Duration: 10 seconds
+   - Duration: 20 seconds
    - Random disappear time: 10-25 seconds
 
 4. **Shrink** (green neon)
@@ -54,6 +54,7 @@ Power-up System Rules:
 - Random generation intervals
 - Visual indication before disappearing
 - Power-ups timeout if not collected
+- Collecting the same powerup type while active resets timer to full duration
 
 ### 3.3 Scoring System
 

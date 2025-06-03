@@ -28,9 +28,7 @@ public class PowerUpTests
         .Should().NotThrow();
 
         powerUp.IsExpired.Should().BeTrue();
-    }
-
-    [Fact]
+    }    [Fact]
     public void PowerUp_EffectDuration_ShouldMatchSpecification()
     {
         var speedBoost = new PowerUp(PowerUpType.SpeedBoost, new Position(0, 0));
@@ -38,9 +36,9 @@ public class PowerUpTests
         var doublePoints = new PowerUp(PowerUpType.DoublePoints, new Position(0, 0));
         var shrink = new PowerUp(PowerUpType.Shrink, new Position(0, 0));
 
-        speedBoost.EffectDurationInSeconds.Should().Be(5);
-        shield.EffectDurationInSeconds.Should().Be(3);
-        doublePoints.EffectDurationInSeconds.Should().Be(10);
+        speedBoost.EffectDurationInSeconds.Should().Be(15);
+        shield.EffectDurationInSeconds.Should().Be(10);
+        doublePoints.EffectDurationInSeconds.Should().Be(20);
         shrink.EffectDurationInSeconds.Should().Be(0); // Instant effect
     }
 
@@ -100,14 +98,12 @@ public class PowerUpTests
         powerUp.Activate();
 
         // Act & Assert - Check initial percentage
-        powerUp.RemainingEffectTimePercentage.Should().BeApproximately(1.0, 0.1);
-
-        // Fast forward time by 2.5 seconds (half of 5 second duration)
+        powerUp.RemainingEffectTimePercentage.Should().BeApproximately(1.0, 0.1);        // Fast forward time by 7.5 seconds (half of 15 second duration)
         ((Action)(() =>
         {
             typeof(PowerUp)
                 .GetProperty(nameof(PowerUp.ActivationTime))
-                ?.SetValue(powerUp, DateTime.UtcNow.AddSeconds(-2.5));
+                ?.SetValue(powerUp, DateTime.UtcNow.AddSeconds(-7.5));
         }))
         .Should().NotThrow();
 

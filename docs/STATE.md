@@ -126,15 +126,15 @@
 "GameEngine.cs"
 ]
 },
-"implementation": {
-"features": [
-"Four power-up types: SpeedBoost, Shield, DoublePoints, Shrink",
-"Neon color coding per PRD specifications",
-"Random spawn timing and positioning",
-"Effect duration management",
-"Maximum 2 power-ups on screen simultaneously",
-"SignalR broadcasting of power-up state"
-],
+"implementation": {                "features": [
+                "Four power-up types: SpeedBoost, Shield, DoublePoints, Shrink",
+                "Neon color coding per PRD specifications",
+                "Random spawn timing and positioning",
+                "Effect duration management with countdown timers",
+                "Timer reset when collecting same powerup type while active",
+                "Maximum 2 power-ups on screen simultaneously",
+                "SignalR broadcasting of power-up state"
+                ],
 "testCoverage": 85,
 "knownIssues": [],                "bugFixes": [
                 {

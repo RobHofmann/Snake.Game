@@ -1,7 +1,9 @@
 using System;
+using System.Collections.Generic;
 using Xunit;
 using FluentAssertions;
 using Snake.Domain.GameEngine;
+using GameEngineClass = Snake.Domain.GameEngine.GameEngine;
 
 namespace Snake.UnitTests.GameEngine;
 
@@ -11,7 +13,7 @@ public class GameEnginePowerUpTests
     public void GameEngine_ShouldSpawnPowerUpsWithinLimits()
     {
         // Arrange
-        var engine = new GameEngine();
+        var engine = new GameEngineClass();
         engine.Initialize(20, 20);
 
         // Act - Run multiple updates to allow power-ups to spawn
@@ -28,14 +30,14 @@ public class GameEnginePowerUpTests
     public void GameEngine_PowerUpCollision_ShouldTriggerEffect()
     {
         // Arrange
-        var engine = new GameEngine();
+        var engine = new GameEngineClass();
         engine.Initialize(20, 20);
 
         // Use reflection to add a power-up directly in the snake's path
         var snakeHead = engine.Snake[0];
         var powerUpPosition = snakeHead + Direction.Right.ToPosition();
 
-        typeof(GameEngine)
+        typeof(GameEngineClass)
             .GetField("_powerUps", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
             ?.SetValue(engine, new List<PowerUp> { new PowerUp(PowerUpType.Shield, powerUpPosition) });
 
@@ -51,14 +53,14 @@ public class GameEnginePowerUpTests
     public void GameEngine_SpeedBoost_ShouldAffectMovementSpeed()
     {
         // Arrange
-        var engine = new GameEngine();
+        var engine = new GameEngineClass();
         engine.Initialize(20, 20);
 
         // Add speed boost power-up
         var snakeHead = engine.Snake[0];
         var powerUpPosition = snakeHead + Direction.Right.ToPosition();
 
-        typeof(GameEngine)
+        typeof(GameEngineClass)
             .GetField("_powerUps", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
             ?.SetValue(engine, new List<PowerUp> { new PowerUp(PowerUpType.SpeedBoost, powerUpPosition) });
 
@@ -73,14 +75,14 @@ public class GameEnginePowerUpTests
     public void GameEngine_ShrinkPowerUp_ShouldReduceSnakeLength()
     {
         // Arrange
-        var engine = new GameEngine();
+        var engine = new GameEngineClass();
         engine.Initialize(20, 20);
 
         // Grow snake by collecting food
         var initialLength = engine.Snake.Count;
         for (int i = 0; i < 5; i++)
         {
-            typeof(GameEngine)
+            typeof(GameEngineClass)
                 .GetField("_food", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
                 ?.SetValue(engine, engine.Snake[0] + Direction.Right.ToPosition());
             engine.Update(100);
@@ -93,7 +95,7 @@ public class GameEnginePowerUpTests
         var snakeHead = engine.Snake[0];
         var powerUpPosition = snakeHead + Direction.Right.ToPosition();
 
-        typeof(GameEngine)
+        typeof(GameEngineClass)
             .GetField("_powerUps", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
             ?.SetValue(engine, new List<PowerUp> { new PowerUp(PowerUpType.Shrink, powerUpPosition) });
 
@@ -109,7 +111,7 @@ public class GameEnginePowerUpTests
     public void GameEngine_PowerUpEffects_ShouldExpire()
     {
         // Arrange
-        var engine = new GameEngine();
+        var engine = new GameEngineClass();
         engine.Initialize(20, 20);
 
         // Add shield power-up
@@ -117,7 +119,7 @@ public class GameEnginePowerUpTests
         var powerUpPosition = snakeHead + Direction.Right.ToPosition();
         var shield = new PowerUp(PowerUpType.Shield, powerUpPosition);
 
-        typeof(GameEngine)
+        typeof(GameEngineClass)
             .GetField("_powerUps", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
             ?.SetValue(engine, new List<PowerUp> { shield });
 
@@ -128,7 +130,7 @@ public class GameEnginePowerUpTests
         // Fast forward time
         typeof(PowerUp)
             .GetProperty(nameof(PowerUp.ActivationTime))
-            ?.SetValue(shield, DateTime.UtcNow.AddSeconds(-4)); // Shield lasts 3 seconds
+            ?.SetValue(shield, DateTime.UtcNow.AddSeconds(-11)); // Shield lasts 10 seconds
 
         engine.Update(100); // Update to process expired effect
 

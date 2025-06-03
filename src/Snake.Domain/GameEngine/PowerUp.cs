@@ -41,17 +41,15 @@ public class PowerUp
                 _ => 10
             };
         }
-    }
-
-    public int EffectDurationInSeconds
+    }    public int EffectDurationInSeconds
     {
         get
         {
             return Type switch
             {
-                PowerUpType.SpeedBoost => 5,    // 5 seconds
-                PowerUpType.Shield => 3,        // 3 seconds
-                PowerUpType.DoublePoints => 10, // 10 seconds
+                PowerUpType.SpeedBoost => 15,   // 15 seconds
+                PowerUpType.Shield => 10,       // 10 seconds
+                PowerUpType.DoublePoints => 20, // 20 seconds
                 PowerUpType.Shrink => 0,        // Instant effect
                 _ => 0
             };
