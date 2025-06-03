@@ -250,6 +250,7 @@ function getPowerUpColor(type) {
 
 // Utility function to get power-up icon based on type
 function getPowerUpIcon(type) {
+    console.log('getPowerUpIcon called with type:', type, 'typeof:', typeof type);
     switch (type) {
         case 'SpeedBoost':
             return '⚡';
@@ -260,6 +261,7 @@ function getPowerUpIcon(type) {
         case 'Shrink':
             return '🌿';
         default:
+            console.log('getPowerUpIcon: Unknown type, returning ?');
             return '?';
     }
 }

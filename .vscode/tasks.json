@@ -8,6 +8,14 @@
             "label": "start-snake-web",
             "problemMatcher": [],
             "type": "shell"
+        },
+        {
+            "command": "dotnet run --project src/Snake.API --launch-profile http",
+            "group": "build",
+            "isBackground": true,
+            "label": "start-snake-api",
+            "problemMatcher": [],
+            "type": "shell"
         }
     ]
 }

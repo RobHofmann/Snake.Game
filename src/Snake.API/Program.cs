@@ -4,11 +4,18 @@ using Snake.Domain.Repositories;
 using Snake.Persistence.Repositories;
 using Snake.API.Hubs;
 using Snake.API.Services;
+using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-builder.Services.AddSignalR();
+builder.Services.AddSignalR(options =>
+{
+    options.EnableDetailedErrors = true;
+}).AddJsonProtocol(options =>
+{
+    options.PayloadSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+});
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(builder =>
