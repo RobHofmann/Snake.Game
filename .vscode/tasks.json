@@ -1,0 +1,13 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "command": "dotnet run --project src/Snake.Web",
+            "group": "build",
+            "isBackground": true,
+            "label": "start-snake-web",
+            "problemMatcher": [],
+            "type": "shell"
+        }
+    ]
+}

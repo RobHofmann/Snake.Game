@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Snake Game</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="game-container">
+        <div class="game-header">
+            <div class="score">Score: <span id="score">0</span></div>
+            <div class="status" id="gameStatus">Ready</div>
+        </div>
+        
+        <canvas id="gameCanvas" class="hide"></canvas>
+
+        <div id="startScreen" class="start-screen">
+            <h2>Snake Game</h2>
+            <p>Press Space to start</p>
+            <div class="controls">
+                <p>Controls:</p>
+                <ul>
+                    <li>Arrow keys or WASD to move</li>
+                    <li>Space to pause/resume</li>
+                </ul>
+            </div>
+        </div>
+
+        <div id="gameOver" class="game-over hide">
+            <h2>Game Over!</h2>
+            <p>Final Score: <span id="finalScore">0</span></p>
+            <button id="playAgain">Play Again</button>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.0/signalr.min.js"></script>
+    <script src="game.js"></script>
+</body>
+</html>
