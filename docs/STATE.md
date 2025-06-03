@@ -126,33 +126,33 @@
 "GameEngine.cs"
 ]
 },
-"implementation": {                "features": [
-                "Four power-up types: SpeedBoost, Shield, DoublePoints, Shrink",
-                "Neon color coding per PRD specifications",
-                "Random spawn timing and positioning",
-                "Effect duration management with countdown timers",
-                "Timer reset when collecting same powerup type while active",
-                "Maximum 2 power-ups on screen simultaneously",
-                "SignalR broadcasting of power-up state"
-                ],
+"implementation": { "features": [
+"Four power-up types: SpeedBoost, Shield, DoublePoints, Shrink",
+"Neon color coding per PRD specifications",
+"Random spawn timing and positioning",
+"Effect duration management with countdown timers",
+"Timer reset when collecting same powerup type while active",
+"Maximum 2 power-ups on screen simultaneously",
+"SignalR broadcasting of power-up state"
+],
 "testCoverage": 85,
-"knownIssues": [],                "bugFixes": [
-                {
-                    "issue": "Power-ups flashing and disappearing when arrow keys pressed",
-                    "fix": "Added PowerUps to SignalR broadcast in GameService.cs",
-                    "date": "2025-06-03"
-                },
-                {
-                    "issue": "Power-up text and snake color flashing during game updates",
-                    "fix": "Standardized SignalR broadcast structure between GameService and GameHub to include all power-up effect states",
-                    "date": "2025-06-03"
-                },
-                {
-                    "issue": "Power-up effects were permanent and never expired",
-                    "fix": "Fixed critical bug where activated powerups were immediately removed from tracking list. Added separate _activePowerUpEffects list to track active effects until expiration. Added countdown timers to UI.",
-                    "date": "2025-06-03"
-                }
-                ]
+"knownIssues": [], "bugFixes": [
+{
+"issue": "Power-ups flashing and disappearing when arrow keys pressed",
+"fix": "Added PowerUps to SignalR broadcast in GameService.cs",
+"date": "2025-06-03"
+},
+{
+"issue": "Power-up text and snake color flashing during game updates",
+"fix": "Standardized SignalR broadcast structure between GameService and GameHub to include all power-up effect states",
+"date": "2025-06-03"
+},
+{
+"issue": "Power-up effects were permanent and never expired",
+"fix": "Fixed critical bug where activated powerups were immediately removed from tracking list. Added separate _activePowerUpEffects list to track active effects until expiration. Added countdown timers to UI.",
+"date": "2025-06-03"
+}
+]
 }
 },
 {
@@ -258,13 +258,13 @@
 "main": {
 "lastCommit": "12e50d9",
 "lastCommitDate": "2025-06-03",
-"commitMessage": "Unify power-up icons: Use emoji icons on playing field",            "recentChanges": [
-                "Fixed critical powerup timer bug - effects now properly expire",
-                "Added separate tracking for active powerup effects vs uncollected powerups",
-                "Implemented countdown timers and progress bars in UI for active effects",
-                "Updated SignalR broadcast to include ActivePowerUpEffects",
-                "Enhanced frontend display with detailed powerup effect status"
-            ]
+"commitMessage": "Unify power-up icons: Use emoji icons on playing field", "recentChanges": [
+"Fixed critical powerup timer bug - effects now properly expire",
+"Added separate tracking for active powerup effects vs uncollected powerups",
+"Implemented countdown timers and progress bars in UI for active effects",
+"Updated SignalR broadcast to include ActivePowerUpEffects",
+"Enhanced frontend display with detailed powerup effect status"
+]
 }
 }
 },

@@ -28,7 +28,8 @@ public class PowerUpTests
         .Should().NotThrow();
 
         powerUp.IsExpired.Should().BeTrue();
-    }    [Fact]
+    }
+    [Fact]
     public void PowerUp_EffectDuration_ShouldMatchSpecification()
     {
         var speedBoost = new PowerUp(PowerUpType.SpeedBoost, new Position(0, 0));

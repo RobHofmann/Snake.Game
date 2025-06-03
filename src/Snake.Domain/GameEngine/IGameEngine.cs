@@ -36,8 +36,8 @@ public interface IGameEngine
     /// Gets the time elapsed during the last frame in milliseconds.
     /// </summary>
     float LastFrameTime { get; }    /// <summary>
-    /// Gets the list of current power-ups on the board.
-    /// </summary>
+                                    /// Gets the list of current power-ups on the board.
+                                    /// </summary>
     IReadOnlyList<PowerUp> PowerUps { get; }
 
     /// <summary>

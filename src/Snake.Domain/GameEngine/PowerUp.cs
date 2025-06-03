@@ -41,7 +41,8 @@ public class PowerUp
                 _ => 10
             };
         }
-    }    public int EffectDurationInSeconds
+    }
+    public int EffectDurationInSeconds
     {
         get
         {

@@ -14,7 +14,7 @@ public class GameEngine : IGameEngine
     private float _renderAccumulator;
     private List<Position> _snake;
     private Position _food;
-    private int _score;    private bool _growNextUpdate;
+    private int _score; private bool _growNextUpdate;
     private List<PowerUp> _powerUps;
     private List<PowerUp> _activePowerUpEffects; // Track active powerup effects separately
     private readonly int _maxPowerUps = 2; // Maximum 2 power-ups on screen as per PRD
@@ -32,11 +32,12 @@ public class GameEngine : IGameEngine
     public IReadOnlyList<Position> Snake => _snake.AsReadOnly();
     public Position Food => _food;
     public Direction CurrentDirection { get; private set; }
-    public float LastFrameTime { get; private set; }    public IReadOnlyList<PowerUp> PowerUps => _powerUps.AsReadOnly();
+    public float LastFrameTime { get; private set; }
+    public IReadOnlyList<PowerUp> PowerUps => _powerUps.AsReadOnly();
     public IReadOnlyList<PowerUp> ActivePowerUpEffects => _activePowerUpEffects.AsReadOnly();
     public bool IsShieldActive => _isShieldActive;
     public bool IsDoublePointsActive => _isDoublePointsActive;
-    public float SpeedMultiplier => _speedMultiplier;    public GameEngine()
+    public float SpeedMultiplier => _speedMultiplier; public GameEngine()
     {
         _snake = new List<Position>();
         _powerUps = new List<PowerUp>();
@@ -53,8 +54,8 @@ public class GameEngine : IGameEngine
         _snake.Clear();
         _score = 0;
         _logicAccumulator = 0;
-        _renderAccumulator = 0;        _growNextUpdate = false;
-        _powerUps.Clear();        _activePowerUpEffects.Clear();
+        _renderAccumulator = 0; _growNextUpdate = false;
+        _powerUps.Clear(); _activePowerUpEffects.Clear();
         _lastPowerUpSpawnTime = DateTime.Now;
         _nextPowerUpSpawnInterval = TimeSpan.FromSeconds(5); // Start with minimum interval
 
@@ -155,7 +156,8 @@ public class GameEngine : IGameEngine
         UpdatePowerUps(currentTickRate);
 
         return true;
-    }    private void UpdatePowerUps(float currentTickRate)
+    }
+    private void UpdatePowerUps(float currentTickRate)
     {
         // First handle all active power-up effects
         var expiredEffects = _activePowerUpEffects.Where(p => p.IsActive && !p.IsActiveEffect).ToList();
@@ -193,14 +195,14 @@ public class GameEngine : IGameEngine
                 {
                     // Activate new powerup
                     ActivatePowerUp(powerUp);
-                    
+
                     // Move to active effects list if it has a duration > 0
                     if (powerUp.EffectDurationInSeconds > 0)
                     {
                         _activePowerUpEffects.Add(powerUp);
                     }
                 }
-                
+
                 // Remove from uncollected powerups list
                 _powerUps.RemoveAt(i);
             }

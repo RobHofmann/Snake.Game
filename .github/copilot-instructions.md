@@ -55,7 +55,7 @@ src/      domain, application, infra, persistence, api, worker
 1. **Define requirements** – Update **PRD.md**; get approval.
 2. **Plan** – Update **ROADMAP.md** → initialise **STATE.md**.
 3. **Design docs** – Update **ARCHITECTURE.md** & other docs _before_ coding.
-4. **Implement** – Code & tests; update **STATE.md** continuously.
+4. **Implement** – Code & tests; update **ROADMAP.md** & **STATE.md** continuously.
 5. **Verify** – Ensure docs match reality.
 6. **Deploy** – Follow **DEPLOYMENT.md**; log final state in **STATE.md**.
 

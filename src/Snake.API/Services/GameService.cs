@@ -64,7 +64,8 @@ public class GameService : BackgroundService
     private async Task BroadcastGameState()
     {
         try
-        {            await _hubContext.Clients.All.SendAsync("UpdateGameState", new
+        {
+            await _hubContext.Clients.All.SendAsync("UpdateGameState", new
             {
                 BoardSize = _gameEngine.BoardSize,
                 Snake = _gameEngine.Snake,
