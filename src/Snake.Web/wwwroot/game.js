@@ -16,6 +16,9 @@ let powerUps = [];
 let activePowerUpEffects = []; // Track active powerup effects with timers
 let gameStartTime = 0; // Track when game started
 let connection = null;
+let scoreSubmitted = false; // Track if score has been submitted for current game session
+let gameWasPlayed = false; // Track if a real game was played (not just page load)
+let pageLoadTime = Date.now(); // Track when page was loaded to prevent initial modal
 
 // Mobile touch variables
 let touchStartX = 0;
@@ -42,6 +45,32 @@ const gameStatusElement = document.getElementById('gameStatus');
 const startScreen = document.getElementById('startScreen');
 const gameOverScreen = document.getElementById('gameOver');
 const playAgainButton = document.getElementById('playAgain');
+const nameInputModal = document.getElementById('nameInputModal');
+const playerNameInput = document.getElementById('playerNameInput');
+const submitHighScoreButton = document.getElementById('submitHighScore');
+const skipHighScoreButton = document.getElementById('skipHighScore');
+const highScoreValueElement = document.getElementById('highScoreValue');
+
+// NUCLEAR OPTION: Completely prevent modal from showing for first 15 seconds
+if (nameInputModal) {
+    const originalRemove = nameInputModal.classList.remove;
+      // Override remove method to block showing modal
+    nameInputModal.classList.remove = function(className) {
+        const timeSincePageLoad = Date.now() - pageLoadTime;
+        if (className === 'hide' && timeSincePageLoad < 15000) {
+            return; // Block the modal from being shown
+        }
+        return originalRemove.call(this, className);
+    };
+    
+    // Restore normal behavior after 15 seconds
+    setTimeout(() => {
+        nameInputModal.classList.remove = originalRemove;
+    }, 15000);
+      // Ensure modal starts hidden
+    nameInputModal.classList.add('hide');
+    nameInputModal.style.display = 'none';
+}
 
 // Set up SignalR connection
 async function setupSignalR() {
@@ -51,13 +80,26 @@ async function setupSignalR() {
             .withAutomaticReconnect()
             .build();        // Handle game state updates from server
         connection.on('UpdateGameState', (state) => {
-            console.log('Received game state update:', state);
             if (state) {
+                const previousGameState = gameState;
+                const previousScore = score;
+                
                 gameState = state.gameState || 'Ready';
                 score = state.score || 0;
                 snake = Array.isArray(state.snake) ? state.snake : [];
                 food = state.food || { x: 0, y: 0 };
-                  // Update power-ups while preserving color information more efficiently
+                
+                // Only log significant state changes, not every update
+                if (previousGameState !== gameState || Math.abs(previousScore - score) > 0) {
+                    console.log(`Game state: ${previousGameState} → ${gameState}, score: ${previousScore} → ${score}`);
+                }                // Set gameStartTime when transitioning from Ready to Playing
+                if (previousGameState === 'Ready' && gameState === 'Playing' && gameStartTime === 0) {
+                    gameStartTime = Date.now();
+                    gameWasPlayed = true; // Mark that a real game was started
+                    console.log('🎮 Game started by player, gameWasPlayed=true');
+                }
+                
+                // Update power-ups while preserving color information more efficiently
                 if (Array.isArray(state.powerUps)) {
                     powerUps = state.powerUps.map(p => ({
                         ...p,
@@ -299,7 +341,6 @@ function getPowerUpColor(type) {
 
 // Utility function to get power-up icon based on type
 function getPowerUpIcon(type) {
-    console.log('getPowerUpIcon called with type:', type, 'typeof:', typeof type);
     switch (type) {
         case 'SpeedBoost':
             return '⚡';
@@ -342,27 +383,172 @@ function updateUI() {
         startScreen.classList.remove('hide');
         gameOverScreen.classList.add('hide');
         canvas.classList.add('hide');
-    } else if (gameState === 'GameOver') {            startScreen.classList.add('hide');
-            gameOverScreen.classList.remove('hide');
-            canvas.classList.remove('hide');
-            submitScore(); // Submit score when game is over
+        nameInputModal.classList.add('hide');        // Reset game session flags
+        scoreSubmitted = false; // Reset score submission flag for new game
+        gameStartTime = 0; // Reset game start time
+        gameWasPlayed = false; // Reset game played flag
+    } else if (gameState === 'GameOver') {
+        startScreen.classList.add('hide');
+        gameOverScreen.classList.remove('hide');        canvas.classList.remove('hide');
+        nameInputModal.classList.add('hide');
+
+        // Only attempt to submit score once per game session AND only if a real game was played
+        if (!scoreSubmitted && gameStartTime > 0 && score > 0 && gameWasPlayed) {
+            console.log('✅ High score check: conditions met, checking leaderboard...');
+            checkForHighScore();
         } else {
-            startScreen.classList.add('hide');
-            gameOverScreen.classList.add('hide');
-            canvas.classList.remove('hide');
+            // If conditions aren't met, just submit anonymously without modal (only if gameWasPlayed)
+            if (!scoreSubmitted && gameWasPlayed && (gameStartTime <= 0 || score <= 0)) {
+                console.log('📝 Submitting anonymous score for completed game');
+                submitScore('Anonymous');
+            }
+        }
+    } else {
+        startScreen.classList.add('hide');
+        gameOverScreen.classList.add('hide');
+        canvas.classList.remove('hide');
+        nameInputModal.classList.add('hide');
+    }
+}// Function to check if current score qualifies for high score entry
+async function checkForHighScore() {
+    // CRITICAL: Block all modals during page load period (PRIMARY FIX)
+    const timeSincePageLoad = Date.now() - pageLoadTime;
+    if (timeSincePageLoad < 5000) {
+        console.log('🚫 BLOCKING: Still in page load grace period, submitting as Anonymous');
+        submitScore('Anonymous');
+        return;
+    }
+    
+    // Don't show name input for scores of 0 or negative scores
+    if (score <= 0) {
+        console.log('🚫 BLOCKING: Score is 0 or negative, submitting as Anonymous');
+        submitScore('Anonymous');
+        return;
+    }
+    
+    // Don't show name input if no game has been started (gameStartTime not set)
+    if (!gameStartTime || gameStartTime === 0) {
+        console.log('🚫 BLOCKING: Game not started (gameStartTime is 0), submitting as Anonymous');
+        submitScore('Anonymous');
+        return;
+    }
+    
+    // Don't show name input if no real game was played
+    if (!gameWasPlayed) {
+        console.log('🚫 BLOCKING: No real game was played, submitting as Anonymous');
+        submitScore('Anonymous');
+        return;
+    }
+    
+    // Additional check: Ensure this isn't happening during page load/initial state
+    // If gameStartTime was set less than 1 second ago, it might be from initial load
+    const timeSinceGameStart = Date.now() - gameStartTime;
+    if (timeSinceGameStart < 1000) {
+        console.log('🚫 BLOCKING: Game started too recently (potential page load), submitting as Anonymous');
+        submitScore('Anonymous');
+        return;
+    }
+    
+    try {        // Get current leaderboard to check if this is a high score
+        const response = await fetch(`${API_BASE_URL}/api/leaderboard/scores/top?limit=10`);
+        if (response.ok) {
+            const scores = await response.json();
+            const lowestHighScore = scores.length > 0 ? Math.min(...scores.map(s => s.score)) : 0;
+            
+            // If player scored higher than lowest high score or (leaderboard has less than 10 entries AND score > 0)
+            const isHigherScore = score > lowestHighScore;
+            const hasRoomInLeaderboard = scores.length < 10;
+            const isQualifyingScore = isHigherScore || (hasRoomInLeaderboard && score > 0);
+            
+            if (isQualifyingScore) {
+                console.log('🎉 Score qualifies for leaderboard, showing modal');
+                showNameInputModal();
+            } else {
+                console.log('📝 Score not high enough, submitting as Anonymous');
+                submitScore('Anonymous');
+            }        } else {
+            // If can't fetch leaderboard, only show name input for scores > 0
+            if (score > 0) {
+                console.log('🎉 Fallback: Score > 0, showing modal');
+                showNameInputModal();
+            } else {
+                console.log('📝 Fallback: Score <= 0, submitting as Anonymous');
+                submitScore('Anonymous');
+            }
+        }    } catch (error) {
+        console.error('💥 Error checking for high score:', error);
+        // On error, only show name input for scores > 0
+        if (score > 0) {
+            showNameInputModal();
+        } else {
+            submitScore('Anonymous');
         }
     }
+}// Function to show name input modal
+function showNameInputModal() {
+    // NUCLEAR OPTION: Absolutely prevent modal for first 15 seconds after page load
+    const timeSincePageLoad = Date.now() - pageLoadTime;
+    if (timeSincePageLoad < 15000) { // 15 seconds - very aggressive
+        console.log('🚫 Modal blocked due to recent page load (NUCLEAR PROTECTION)');
+        return; // Don't even submit score, just return
+    }
+    
+    // Additional safety checks to prevent any modal from showing inappropriately
+    if (score <= 0) {
+        console.log('🚫 Modal blocked due to zero or negative score');
+        submitScore('Anonymous');
+        return;
+    }
+    
+    if (!gameWasPlayed) {
+        console.log('🚫 Modal blocked - no real game played');
+        submitScore('Anonymous');
+        return;
+    }
+    
+    if (!gameStartTime || gameStartTime === 0) {
+        console.log('🚫 Modal blocked - no game start time');
+        submitScore('Anonymous');
+        return;
+    }
+    
+    const timeSinceGameStart = Date.now() - gameStartTime;
+    if (timeSinceGameStart < 1000) {
+        console.log('🚫 Modal blocked - game started too recently');
+        submitScore('Anonymous');
+        return;
+    }
+    
+    // Show the modal
+    highScoreValueElement.textContent = score;
+    playerNameInput.value = localStorage.getItem('playerName') || '';
+    playerNameInput.focus();
+    nameInputModal.classList.remove('hide');
+}
 
     // Function to submit score to leaderboard
-    async function submitScore() {
+    async function submitScore(playerName = null) {
+        if (scoreSubmitted) {
+            return; // Prevent duplicate submissions
+        }
+        
+        scoreSubmitted = true;
+        
         try {
+            const finalPlayerName = playerName || playerNameInput.value.trim() || 'Anonymous';
+            
+            // Save player name to localStorage for future games
+            if (finalPlayerName !== 'Anonymous') {
+                localStorage.setItem('playerName', finalPlayerName);
+            }
+            
             const response = await fetch(`${API_BASE_URL}/api/leaderboard/scores`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    playerName: localStorage.getItem('playerName') || 'Anonymous',
+                    playerName: finalPlayerName,
                     score: score,
                     gameTime: Math.floor((Date.now() - gameStartTime) / 1000),
                     region: 'global'
@@ -372,11 +558,19 @@ function updateUI() {
             if (response.ok) {
                 const result = await response.json();
                 console.log('Score submitted successfully:', result);
+                
+                // Hide name input modal if it's showing
+                nameInputModal.classList.add('hide');
+                
+                // Refresh leaderboard to show new score
+                fetchLeaderboard(currentLeaderboardPeriod);
             } else {
                 console.error('Failed to submit score:', response.statusText);
+                scoreSubmitted = false; // Allow retry on failure
             }
         } catch (error) {
             console.error('Error submitting score:', error);
+            scoreSubmitted = false; // Allow retry on failure
         }
     }
 
@@ -456,9 +650,11 @@ async function handleInput(key) {
         case 'd':
         case 'D':
             direction = 'Right';
-            break;
-        case ' ':            if (gameState === 'Ready') {
+            break;        case ' ':
+            if (gameState === 'Ready') {
+                console.log('🎮 Player pressed SPACE to start game - setting gameWasPlayed=true');
                 gameStartTime = Date.now();
+                gameWasPlayed = true; // Mark that player started a game
                 await connection.invoke('StartGame');
             } else if (gameState === 'Playing') {
                 await connection.invoke('PauseGame');
@@ -638,6 +834,22 @@ document.addEventListener('keydown', (e) => {
 playAgainButton.addEventListener('click', async () => {
     if (connection) {
         await connection.invoke('StartGame');
+    }
+});
+
+// High score modal event listeners
+submitHighScoreButton.addEventListener('click', () => {
+    submitScore();
+});
+
+skipHighScoreButton.addEventListener('click', () => {
+    submitScore('Anonymous');
+});
+
+// Allow Enter key to submit name
+playerNameInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+        submitScore();
     }
 });
 

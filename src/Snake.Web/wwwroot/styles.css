@@ -32,7 +32,12 @@ canvas {
 }
 
 .hide {
-    display: none;
+    display: none !important;
+}
+
+/* Force modal to be hidden when hide class is applied */
+.modal.hide {
+    display: none !important;
 }
 
 .start-screen, .game-over {
@@ -438,4 +443,71 @@ button:hover {
         bottom: calc(20px + env(safe-area-inset-bottom));
         left: calc(20px + env(safe-area-inset-left));
     }
+}
+
+/* Modal styles */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.8);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    background-color: #1a0b2e;
+    padding: 30px;
+    border: 2px solid #4deeea;
+    border-radius: 12px;
+    box-shadow: 0 0 30px rgba(77, 238, 234, 0.4);
+    text-align: center;
+    max-width: 400px;
+    width: 90%;
+}
+
+.modal-content h3 {
+    color: #39ff14;
+    margin-bottom: 15px;
+    text-shadow: 0 0 10px rgba(57, 255, 20, 0.5);
+}
+
+.modal-content p {
+    margin-bottom: 15px;
+    color: #4deeea;
+}
+
+#playerNameInput {
+    width: 100%;
+    padding: 12px;
+    font-size: 16px;
+    border: 2px solid #4deeea;
+    border-radius: 6px;
+    background-color: rgba(26, 11, 46, 0.8);
+    color: #4deeea;
+    text-align: center;
+    margin-bottom: 20px;
+    box-sizing: border-box;
+}
+
+#playerNameInput:focus {
+    outline: none;
+    border-color: #39ff14;
+    box-shadow: 0 0 10px rgba(57, 255, 20, 0.3);
+}
+
+.modal-buttons {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+}
+
+.modal-buttons button {
+    margin: 0;
+    flex: 1;
+    max-width: 120px;
 }

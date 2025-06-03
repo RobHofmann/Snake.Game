@@ -6,6 +6,7 @@ using System.Net;
 using Snake.Domain.Entities;
 using Snake.Domain.Repositories;
 using Snake.Persistence.Configuration;
+using Snake.Persistence.Serialization;
 
 namespace Snake.Persistence.Repositories;
 
@@ -24,14 +25,13 @@ public class CosmosDbLeaderboardRepository : ILeaderboardRepository, IAsyncDispo
     {
         _logger = logger;
         var settings = new CosmosDbSettings();
-        configuration.GetSection("CosmosDb").Bind(settings);
-
-        var options = new CosmosClientOptions
+        configuration.GetSection("CosmosDb").Bind(settings); var options = new CosmosClientOptions
         {
             ConnectionMode = ConnectionMode.Direct,
             ConsistencyLevel = ConsistencyLevel.Session,
             MaxRetryAttemptsOnRateLimitedRequests = MaxRetries,
-            MaxRetryWaitTimeOnRateLimitedRequests = TimeSpan.FromSeconds(30)
+            MaxRetryWaitTimeOnRateLimitedRequests = TimeSpan.FromSeconds(30),
+            Serializer = new CosmosSystemTextJsonSerializer()
         };
 
         try
@@ -190,7 +190,6 @@ public class CosmosDbLeaderboardRepository : ILeaderboardRepository, IAsyncDispo
             throw;
         }
     }
-
     public async ValueTask DisposeAsync()
     {
         if (_client != null)
@@ -200,6 +199,9 @@ public class CosmosDbLeaderboardRepository : ILeaderboardRepository, IAsyncDispo
                 // CosmosClient implements IDisposable, not IAsyncDisposable
                 _client.Dispose();
                 _logger.LogInformation("Successfully disposed Cosmos DB client");
+
+                // Return a completed task to satisfy async pattern
+                await Task.CompletedTask;
             }
             catch (Exception ex)
             {

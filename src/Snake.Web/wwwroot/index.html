@@ -53,6 +53,20 @@
             </div>        </div>
     </div>
 
+    <!-- High Score Name Input Modal -->
+    <div id="nameInputModal" class="modal hide">
+        <div class="modal-content">
+            <h3>High Score!</h3>
+            <p>You achieved a score of <span id="highScoreValue">0</span>!</p>
+            <p>Enter your name for the leaderboard:</p>
+            <input type="text" id="playerNameInput" placeholder="Enter your name" maxlength="20" autocomplete="off">
+            <div class="modal-buttons">
+                <button id="submitHighScore">Submit Score</button>
+                <button id="skipHighScore">Skip</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Mobile touch controls -->
     <div id="mobileControls" class="mobile-controls">
         <div class="dpad">

@@ -4,6 +4,8 @@ using Microsoft.Extensions.Logging;
 using Azure.Identity;
 using Snake.Domain.Entities;
 using Snake.Persistence.Configuration;
+using Snake.Persistence.Serialization;
+using System.Collections.ObjectModel;
 
 namespace Snake.Persistence.Services;
 
@@ -15,22 +17,19 @@ public class CosmosDbInitializationService : IDatabaseInitializationService
 {
     private readonly CosmosClient _client;
     private readonly CosmosDbSettings _settings;
-    private readonly ILogger<CosmosDbInitializationService> _logger;
-
-    public CosmosDbInitializationService(
+    private readonly ILogger<CosmosDbInitializationService> _logger; public CosmosDbInitializationService(
         IConfiguration configuration,
         ILogger<CosmosDbInitializationService> logger)
     {
         _logger = logger;
         _settings = new CosmosDbSettings();
-        configuration.GetSection("CosmosDb").Bind(_settings);
-
-        var options = new CosmosClientOptions
+        configuration.GetSection("CosmosDb").Bind(_settings); var options = new CosmosClientOptions
         {
             ConnectionMode = ConnectionMode.Direct,
             ConsistencyLevel = ConsistencyLevel.Session,
             MaxRetryAttemptsOnRateLimitedRequests = 3,
-            MaxRetryWaitTimeOnRateLimitedRequests = TimeSpan.FromSeconds(30)
+            MaxRetryWaitTimeOnRateLimitedRequests = TimeSpan.FromSeconds(30),
+            Serializer = new CosmosSystemTextJsonSerializer()
         };
 
         try
@@ -72,12 +71,10 @@ public class CosmosDbInitializationService : IDatabaseInitializationService
             _logger.LogError(ex, "Database initialization failed");
             throw;
         }
-    }
-
-    /// <summary>
-    /// Seeds the database with initial data if empty.
-    /// This is typically used for development and testing environments.
-    /// </summary>
+    }    /// <summary>
+         /// Seeds the database with initial data if empty.
+         /// This is typically used for development and testing environments.
+         /// </summary>
     public async Task SeedDataAsync(CancellationToken cancellationToken = default)
     {
         try
@@ -133,9 +130,31 @@ public class CosmosDbInitializationService : IDatabaseInitializationService
 
             foreach (var score in sampleScores)
             {
+                // Ensure ID is set
+                if (string.IsNullOrEmpty(score.Id))
+                {
+                    score.Id = Guid.NewGuid().ToString();
+                }
+
+                // Set partition key for proper document routing
                 score.PartitionKey = $"{score.Region}_{score.Timestamp:yyyy-MM}";
-                await container.CreateItemAsync(score, new PartitionKey(score.PartitionKey), cancellationToken: cancellationToken);
-                _logger.LogInformation("Seeded score: {PlayerName} - {Score}", score.PlayerName, score.Score);
+
+                // Create item with proper partition key
+                try
+                {
+                    var response = await container.CreateItemAsync(
+                        score,
+                        new PartitionKey(score.PartitionKey),
+                        cancellationToken: cancellationToken);
+
+                    _logger.LogInformation("Seeded score: {PlayerName} - {Score} (RequestCharge: {RequestCharge})",
+                        score.PlayerName, score.Score, response.RequestCharge);
+                }
+                catch (CosmosException cex)
+                {
+                    _logger.LogError(cex, "Failed to seed score for {PlayerName}: {ErrorMessage}",
+                        score.PlayerName, cex.Message);
+                }
             }
 
             _logger.LogInformation("Database seeding completed successfully with {Count} sample scores", sampleScores.Length);
@@ -172,11 +191,11 @@ public class CosmosDbInitializationService : IDatabaseInitializationService
             throw;
         }
     }
-
     private async Task CreateLeaderboardContainerIfNotExistsAsync(Database database, CancellationToken cancellationToken)
     {
         try
         {
+            // Define the container properties
             var containerProperties = new ContainerProperties
             {
                 Id = _settings.ContainerName,
@@ -199,8 +218,11 @@ public class CosmosDbInitializationService : IDatabaseInitializationService
                 }
             };
 
+            // Create the container if it doesn't exist
+            var throughputProperties = ThroughputProperties.CreateAutoscaleThroughput(1000); // Use autoscale with 1000 RU/s minimum
             var containerResponse = await database.CreateContainerIfNotExistsAsync(
                 containerProperties,
+                throughputProperties,
                 cancellationToken: cancellationToken);
 
             if (containerResponse.StatusCode == System.Net.HttpStatusCode.Created)

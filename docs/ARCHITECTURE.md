@@ -69,7 +69,7 @@ Key Components:
    - Semi-transparent backgrounds for UI overlays
    - Responsive layout with breakpoints:
      - Desktop: >768px - Full size with margins
-     - Tablet: 481-768px - Scaled to fit with touch controls 
+     - Tablet: 481-768px - Scaled to fit with touch controls
      - Mobile: ≤480px - Optimized layout with larger touch targets
    - Neon glow effects for game elements
    - Mobile-specific UI elements:
@@ -259,11 +259,14 @@ src/
 ### 4.2 Input System
 
 #### Desktop Input
+
 - Keyboard input handler (WASD + Arrow keys)
 - Space bar for pause/resume and start game
 
-#### Mobile Input  
+#### Mobile Input
+
 - **Touch/Swipe Gestures**: Primary mobile input method
+
   - Swipe up/down/left/right for directional control
   - Minimum swipe distance: 30px for reliable detection
   - Touch response time: <16ms target for 60fps
@@ -277,6 +280,7 @@ src/
   - Visual feedback on press with neon glow effects
 
 #### Cross-Platform Features
+
 - Input state management with debouncing
 - Automatic input method detection (touch vs keyboard)
 - Responsive control visibility based on device capabilities

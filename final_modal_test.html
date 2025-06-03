@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Snake Modal Fix Test</title>
+    <style>
+        body { font-family: Arial; padding: 20px; }
+        .result { padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .pass { background: #d4edda; color: #155724; }
+        .fail { background: #f8d7da; color: #721c24; }
+        iframe { width: 100%; height: 600px; border: 1px solid #ccc; margin: 20px 0; }
+    </style>
+</head>
+<body>
+    <h1>Snake Game Modal Fix Test</h1>
+    
+    <div class="result" id="test-result">
+        <strong>Test Status:</strong> Loading game...
+    </div>
+    
+    <p><strong>Expected:</strong> No modal should appear when the game loads.</p>
+    <p><strong>If you see the modal:</strong> The fix failed.</p>
+    <p><strong>If no modal appears:</strong> The fix worked! ✅</p>
+    
+    <button onclick="reloadTest()">Reload Test</button>
+    
+    <iframe src="http://localhost:5080" id="gameFrame"></iframe>
+    
+    <script>
+        function reloadTest() {
+            document.getElementById('gameFrame').src = 'http://localhost:5080?' + Date.now();
+            document.getElementById('test-result').innerHTML = '<strong>Test Status:</strong> Reloading game...';
+        }
+        
+        // Auto-refresh every 20 seconds to test multiple times
+        setInterval(() => {
+            console.log('Auto-refreshing test...');
+            reloadTest();
+        }, 20000);
+    </script>
+</body>
+</html>

@@ -66,24 +66,23 @@ static async Task InitializeDatabaseAsync(IServiceProvider services)
     using var scope = services.CreateScope();
     var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
     var configuration = scope.ServiceProvider.GetRequiredService<IConfiguration>();
-    
+
     try
     {
         logger.LogInformation("Starting database initialization...");
-        
+
         // Create the database initialization directly since we're having DI issues
         var dbLogger = scope.ServiceProvider.GetRequiredService<ILoggerFactory>()
             .CreateLogger("DatabaseInitialization");
-            
-        var settings = new Snake.Persistence.Configuration.CosmosDbSettings();
-        configuration.GetSection("CosmosDb").Bind(settings);
 
-        var options = new Microsoft.Azure.Cosmos.CosmosClientOptions
+        var settings = new Snake.Persistence.Configuration.CosmosDbSettings();
+        configuration.GetSection("CosmosDb").Bind(settings); var options = new Microsoft.Azure.Cosmos.CosmosClientOptions
         {
             ConnectionMode = Microsoft.Azure.Cosmos.ConnectionMode.Direct,
             ConsistencyLevel = Microsoft.Azure.Cosmos.ConsistencyLevel.Session,
             MaxRetryAttemptsOnRateLimitedRequests = 3,
-            MaxRetryWaitTimeOnRateLimitedRequests = TimeSpan.FromSeconds(30)
+            MaxRetryWaitTimeOnRateLimitedRequests = TimeSpan.FromSeconds(30),
+            Serializer = new Snake.Persistence.Serialization.CosmosSystemTextJsonSerializer()
         };
 
         Microsoft.Azure.Cosmos.CosmosClient client = settings.UseManagedIdentity
@@ -103,40 +102,58 @@ static async Task InitializeDatabaseAsync(IServiceProvider services)
             PartitionKeyPath = "/partitionKey"
         };
 
-        await database.CreateContainerIfNotExistsAsync(containerProperties);
-        
-        dbLogger.LogInformation("Database and container initialization completed");
-        
-        // Seed data in development environment
+        await database.CreateContainerIfNotExistsAsync(containerProperties); dbLogger.LogInformation("Database and container initialization completed");
+
+        // Seed data in development environment  
         if (Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development")
         {
+            dbLogger.LogInformation("Starting development data seeding...");
             var container = database.GetContainer(settings.ContainerName);
-            
-            // Check if container is empty
-            var countQuery = new Microsoft.Azure.Cosmos.QueryDefinition("SELECT VALUE COUNT(1) FROM c");
-            using var countIterator = container.GetItemQueryIterator<int>(countQuery);
-            var countResponse = await countIterator.ReadNextAsync();
-            var itemCount = countResponse.FirstOrDefault();
 
-            if (itemCount == 0)
+            try
             {
-                // Seed with sample data
-                var sampleScore = new Snake.Domain.Entities.GameScore
-                {
-                    Id = Guid.NewGuid().ToString(),
-                    PlayerName = "DEV",
-                    Score = 1500,
-                    GameTime = 180,
-                    Timestamp = DateTime.UtcNow,
-                    Region = "global",
-                    PartitionKey = $"global_{DateTime.UtcNow:yyyy-MM}"
-                };
+                // Check if container is empty
+                var countQuery = new Microsoft.Azure.Cosmos.QueryDefinition("SELECT VALUE COUNT(1) FROM c");
+                using var countIterator = container.GetItemQueryIterator<int>(countQuery);
+                var countResponse = await countIterator.ReadNextAsync();
+                var itemCount = countResponse.FirstOrDefault();
 
-                await container.CreateItemAsync(sampleScore, new Microsoft.Azure.Cosmos.PartitionKey(sampleScore.PartitionKey));
-                dbLogger.LogInformation("Seeded initial development data");
+                dbLogger.LogInformation("Found {ItemCount} existing items in container", itemCount);
+
+                if (itemCount == 0)
+                {
+                    dbLogger.LogInformation("Creating sample game score...");
+
+                    // Seed with sample data
+                    var sampleScore = new Snake.Domain.Entities.GameScore
+                    {
+                        Id = Guid.NewGuid().ToString(),
+                        PlayerName = "DEV",
+                        Score = 1500,
+                        GameTime = 180,
+                        Timestamp = DateTime.UtcNow,
+                        Region = "global",
+                        PartitionKey = $"global_{DateTime.UtcNow:yyyy-MM}"
+                    };
+
+                    dbLogger.LogInformation("Attempting to create item with ID: {Id}, PartitionKey: {PartitionKey}",
+                        sampleScore.Id, sampleScore.PartitionKey);
+
+                    var response = await container.CreateItemAsync(sampleScore, new Microsoft.Azure.Cosmos.PartitionKey(sampleScore.PartitionKey));
+                    dbLogger.LogInformation("SUCCESS! Seeded initial development data. Request charge: {RequestCharge}", response.RequestCharge);
+                }
+                else
+                {
+                    dbLogger.LogInformation("Container already has data, skipping seeding");
+                }
+            }
+            catch (Exception seedEx)
+            {
+                dbLogger.LogError(seedEx, "Failed to seed development data: {Message}", seedEx.Message);
+                // Don't throw - continue with startup even if seeding fails
             }
         }
-        
+
         client.Dispose();
         logger.LogInformation("Database initialization completed successfully");
     }
