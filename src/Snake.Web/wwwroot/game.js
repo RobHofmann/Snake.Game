@@ -9,6 +9,7 @@ let score = 0;
 let snake = [];
 let food = { x: 0, y: 0 };
 let powerUps = [];
+let activePowerUpEffects = []; // Track active powerup effects with timers
 let connection = null;
 
 // Game state indicators
@@ -44,8 +45,7 @@ async function setupSignalR() {
                 score = state.score || 0;
                 snake = Array.isArray(state.snake) ? state.snake : [];
                 food = state.food || { x: 0, y: 0 };
-                
-                // Update power-ups while preserving color information more efficiently
+                  // Update power-ups while preserving color information more efficiently
                 if (Array.isArray(state.powerUps)) {
                     powerUps = state.powerUps.map(p => ({
                         ...p,
@@ -53,6 +53,16 @@ async function setupSignalR() {
                     }));
                 } else {
                     powerUps = [];
+                }
+                
+                // Update active powerup effects with countdown timers
+                if (Array.isArray(state.activePowerUpEffects)) {
+                    activePowerUpEffects = state.activePowerUpEffects.map(p => ({
+                        ...p,
+                        color: p.color || getPowerUpColor(p.type)
+                    }));
+                } else {
+                    activePowerUpEffects = [];
                 }
                 
                 // Update power-up effect states consistently
@@ -198,35 +208,51 @@ function drawGame() {
             }
         });
     }
-    
-    ctx.restore();    // Draw active power-up indicators in a semi-transparent panel
-    const indicators = [];
-    if (isShieldActive) indicators.push({ color: '#FFFF00', text: 'Shield Active', icon: '🛡️' });
-    if (isDoublePointsActive) indicators.push({ color: '#FF00FF', text: 'Double Points Active', icon: '2️⃣' });
-    if (speedMultiplier > 1.0) indicators.push({ color: '#0080FF', text: 'Speed Boost Active', icon: '⚡' });
-
-    if (indicators.length > 0) {
+      ctx.restore();    // Draw active power-up effect indicators with countdown timers
+    if (activePowerUpEffects && activePowerUpEffects.length > 0) {
         // Draw semi-transparent panel
-        ctx.fillStyle = 'rgba(26, 11, 46, 0.8)'; // Match game background with alpha
-        ctx.fillRect(5, 5, 200, (indicators.length * 30) + 10);
+        ctx.fillStyle = 'rgba(26, 11, 46, 0.9)'; // Match game background with alpha
+        ctx.fillRect(5, 5, 280, (activePowerUpEffects.length * 40) + 10);
         
-        // Draw indicators
+        // Draw each active effect with countdown timer
         ctx.font = 'bold 16px Arial';
         ctx.textBaseline = 'middle';
-        indicators.forEach((indicator, index) => {
-            const y = 20 + (index * 30);
+        
+        activePowerUpEffects.forEach((effect, index) => {
+            const y = 25 + (index * 40);
             
             // Draw icon with glow
             ctx.save();
             ctx.shadowBlur = 10;
-            ctx.shadowColor = indicator.color;
-            ctx.fillStyle = indicator.color;
-            ctx.fillText(indicator.icon, 15, y);
+            ctx.shadowColor = effect.color;
+            ctx.fillStyle = effect.color;
+            ctx.fillText(getPowerUpIcon(effect.type), 15, y);
             
-            // Draw text
+            // Draw effect name
             ctx.shadowBlur = 0;
             ctx.fillStyle = '#ffffff';
-            ctx.fillText(indicator.text, 45, y);
+            ctx.fillText(getEffectName(effect.type), 45, y);
+            
+            // Draw countdown timer
+            const remainingPercent = effect.remainingEffectTimePercentage || 0;
+            const remainingSeconds = Math.ceil(remainingPercent * effect.effectDurationInSeconds);
+            ctx.fillStyle = '#ffff00';
+            ctx.fillText(`${remainingSeconds}s`, 220, y);
+            
+            // Draw progress bar
+            const barWidth = 100;
+            const barHeight = 6;
+            const barX = 120;
+            const barY = y - barHeight / 2;
+            
+            // Background bar
+            ctx.fillStyle = '#2a1a3e';
+            ctx.fillRect(barX, barY, barWidth, barHeight);
+            
+            // Progress bar
+            ctx.fillStyle = effect.color;
+            ctx.fillRect(barX, barY, barWidth * remainingPercent, barHeight);
+            
             ctx.restore();
         });
     }
@@ -263,6 +289,22 @@ function getPowerUpIcon(type) {
         default:
             console.log('getPowerUpIcon: Unknown type, returning ?');
             return '?';
+    }
+}
+
+// Utility function to get powerup effect names
+function getEffectName(type) {
+    switch (type) {
+        case 'SpeedBoost':
+            return 'Speed Boost';
+        case 'Shield':
+            return 'Shield';
+        case 'DoublePoints':
+            return 'Double Points';
+        case 'Shrink':
+            return 'Shrink';
+        default:
+            return 'Unknown';
     }
 }
 

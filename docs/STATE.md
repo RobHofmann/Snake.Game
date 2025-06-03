@@ -1,5 +1,5 @@
 {
-"version": "1.5",
+"version": "1.6",
 "lastUpdated": "2025-06-03",
 "projectProgress": {
 "currentPhase": {
@@ -136,19 +136,23 @@
 "SignalR broadcasting of power-up state"
 ],
 "testCoverage": 85,
-"knownIssues": [],
-"bugFixes": [
-{
-"issue": "Power-ups flashing and disappearing when arrow keys pressed",
-"fix": "Added PowerUps to SignalR broadcast in GameService.cs",
-"date": "2025-06-03"
-},
-{
-"issue": "Power-up text and snake color flashing during game updates",
-"fix": "Standardized SignalR broadcast structure between GameService and GameHub to include all power-up effect states",
-"date": "2025-06-03"
-}
-]
+"knownIssues": [],                "bugFixes": [
+                {
+                    "issue": "Power-ups flashing and disappearing when arrow keys pressed",
+                    "fix": "Added PowerUps to SignalR broadcast in GameService.cs",
+                    "date": "2025-06-03"
+                },
+                {
+                    "issue": "Power-up text and snake color flashing during game updates",
+                    "fix": "Standardized SignalR broadcast structure between GameService and GameHub to include all power-up effect states",
+                    "date": "2025-06-03"
+                },
+                {
+                    "issue": "Power-up effects were permanent and never expired",
+                    "fix": "Fixed critical bug where activated powerups were immediately removed from tracking list. Added separate _activePowerUpEffects list to track active effects until expiration. Added countdown timers to UI.",
+                    "date": "2025-06-03"
+                }
+                ]
 }
 },
 {
@@ -254,14 +258,13 @@
 "main": {
 "lastCommit": "12e50d9",
 "lastCommitDate": "2025-06-03",
-"commitMessage": "Unify power-up icons: Use emoji icons on playing field",
-"recentChanges": [
-"Unified power-up icons between playing field and status indicators",
-"Fixed power-up text and snake color flashing issues",
-"Standardized SignalR broadcast structure for consistent state sync",
-"Implemented emoji icon system with colored glow effects",
-"Updated GameService.cs to include all power-up effect states"
-]
+"commitMessage": "Unify power-up icons: Use emoji icons on playing field",            "recentChanges": [
+                "Fixed critical powerup timer bug - effects now properly expire",
+                "Added separate tracking for active powerup effects vs uncollected powerups",
+                "Implemented countdown timers and progress bars in UI for active effects",
+                "Updated SignalR broadcast to include ActivePowerUpEffects",
+                "Enhanced frontend display with detailed powerup effect status"
+            ]
 }
 }
 },

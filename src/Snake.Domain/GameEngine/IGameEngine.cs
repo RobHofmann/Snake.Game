@@ -35,12 +35,15 @@ public interface IGameEngine
     /// <summary>
     /// Gets the time elapsed during the last frame in milliseconds.
     /// </summary>
-    float LastFrameTime { get; }
-
-    /// <summary>
+    float LastFrameTime { get; }    /// <summary>
     /// Gets the list of current power-ups on the board.
     /// </summary>
     IReadOnlyList<PowerUp> PowerUps { get; }
+
+    /// <summary>
+    /// Gets the list of currently active power-up effects.
+    /// </summary>
+    IReadOnlyList<PowerUp> ActivePowerUpEffects { get; }
 
     /// <summary>
     /// Gets whether the shield powerup is active.

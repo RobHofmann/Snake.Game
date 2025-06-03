@@ -64,13 +64,13 @@ public class GameService : BackgroundService
     private async Task BroadcastGameState()
     {
         try
-        {
-            await _hubContext.Clients.All.SendAsync("UpdateGameState", new
+        {            await _hubContext.Clients.All.SendAsync("UpdateGameState", new
             {
                 BoardSize = _gameEngine.BoardSize,
                 Snake = _gameEngine.Snake,
                 Food = _gameEngine.Food,
                 PowerUps = _gameEngine.PowerUps,
+                ActivePowerUpEffects = _gameEngine.ActivePowerUpEffects,
                 Score = _gameEngine.Score,
                 GameState = _gameEngine.State.ToString(),
                 IsShieldActive = _gameEngine.IsShieldActive,
