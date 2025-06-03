@@ -6,8 +6,7 @@ using System;
 namespace Snake.Domain.GameEngine;
 
 public class GameEngine : IGameEngine
-{
-    private readonly Random _random = new();
+{    private readonly Random _random = new();
     private readonly float _logicUpdateRate = 1000f / 10; // 10 logic updates per second base speed
     private readonly float _renderUpdateRate = 1000f / 60; // 60 FPS target
     private float _logicAccumulator;
@@ -25,6 +24,8 @@ public class GameEngine : IGameEngine
     private readonly TimeSpan _minPowerUpSpawnInterval = TimeSpan.FromSeconds(5);
     private readonly TimeSpan _maxPowerUpSpawnInterval = TimeSpan.FromSeconds(15);
     private TimeSpan _nextPowerUpSpawnInterval;
+    private readonly Queue<Direction> _directionQueue = new();
+    private const int MaxQueuedDirections = 2; // Allow up to 2 queued direction changes
 
     public GameState State { get; private set; }
     public int Score => _score;
@@ -48,9 +49,7 @@ public class GameEngine : IGameEngine
     public void Initialize(int width, int height)
     {
         if (width < 10 || height < 10)
-            throw new ArgumentException("Board size must be at least 10x10");
-
-        BoardSize = (width, height);
+            throw new ArgumentException("Board size must be at least 10x10");        BoardSize = (width, height);
         _snake.Clear();
         _score = 0;
         _logicAccumulator = 0;
@@ -58,6 +57,7 @@ public class GameEngine : IGameEngine
         _powerUps.Clear(); _activePowerUpEffects.Clear();
         _lastPowerUpSpawnTime = DateTime.Now;
         _nextPowerUpSpawnInterval = TimeSpan.FromSeconds(5); // Start with minimum interval
+        _directionQueue.Clear(); // Clear any queued directions
 
         // Reset powerup effects
         _isShieldActive = false;
@@ -98,11 +98,24 @@ public class GameEngine : IGameEngine
         }
 
         return true;
-    }
-
-    private bool UpdateGameLogic()
+    }    private bool UpdateGameLogic()
     {
         var currentTickRate = _logicUpdateRate * (1f - (_score * 0.01f)).Clamp(0.5f, 1f);
+
+        // Process next queued direction if available
+        if (_directionQueue.Count > 0)
+        {
+            var nextDirection = _directionQueue.Peek();
+            if (!nextDirection.IsOpposite(CurrentDirection))
+            {
+                CurrentDirection = _directionQueue.Dequeue();
+            }
+            else
+            {
+                // Remove invalid direction from queue
+                _directionQueue.Dequeue();
+            }
+        }
 
         var newHead = _snake[0] + CurrentDirection.ToPosition();
 
@@ -257,18 +270,37 @@ public class GameEngine : IGameEngine
                 break;
                 // Shrink doesn't need deactivation as it's an instant effect
         }
-    }
-
-    public bool ChangeDirection(Direction newDirection)
+    }    public bool ChangeDirection(Direction newDirection)
     {
         if (State != GameState.Playing)
             return false;
 
-        if (newDirection.IsOpposite(CurrentDirection))
+        // Determine the direction to check against (current direction or last queued direction)
+        var directionToCheck = _directionQueue.Count > 0 ? _directionQueue.Last() : CurrentDirection;
+
+        // Prevent direct opposite direction changes
+        if (newDirection.IsOpposite(directionToCheck))
             return false;
 
-        CurrentDirection = newDirection;
-        return true;
+        // Prevent duplicate directions in queue
+        if (directionToCheck == newDirection)
+            return false;
+
+        // If we're changing direction immediately (no queue), just change it
+        if (_directionQueue.Count == 0 && !newDirection.IsOpposite(CurrentDirection))
+        {
+            CurrentDirection = newDirection;
+            return true;
+        }
+
+        // Otherwise, add to queue if there's space
+        if (_directionQueue.Count < MaxQueuedDirections)
+        {
+            _directionQueue.Enqueue(newDirection);
+            return true;
+        }
+
+        return false;
     }
 
     public void TogglePause()

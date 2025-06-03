@@ -7,11 +7,9 @@ namespace Snake.UnitTests.GameEngine;
 public class InputHandlerTests
 {
     private readonly IGameEngine _engine;
-    private readonly IInputHandler _inputHandler;
-
-    public InputHandlerTests()
+    private readonly IInputHandler _inputHandler;    public InputHandlerTests()
     {
-        _engine = new GameEngine();
+        _engine = new Snake.Domain.GameEngine.GameEngine();
         _inputHandler = new InputHandler(_engine);
     }
 

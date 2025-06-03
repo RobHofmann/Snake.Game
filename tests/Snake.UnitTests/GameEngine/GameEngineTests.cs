@@ -8,11 +8,9 @@ public class GameEngineTests
 {
     private readonly IGameEngine _engine;
     private const int DefaultWidth = 20;
-    private const int DefaultHeight = 20;
-
-    public GameEngineTests()
+    private const int DefaultHeight = 20;    public GameEngineTests()
     {
-        _engine = new GameEngine();
+        _engine = new Snake.Domain.GameEngine.GameEngine();
     }
 
     [Fact]
@@ -93,6 +91,80 @@ public class GameEngineTests
         // Act & Assert
         _engine.ChangeDirection(Direction.Left).Should().BeFalse();
         _engine.CurrentDirection.Should().Be(Direction.Right);
+    }
+
+    [Fact]
+    public void ChangeDirection_RapidInputsPrevent180Turn_ShouldQueueDirections()
+    {
+        // Arrange
+        _engine.Initialize(DefaultWidth, DefaultHeight);
+        _engine.CurrentDirection.Should().Be(Direction.Right); // Snake starts moving right
+
+        // Act - Simulate rapid inputs: Right -> Down -> Left (should not allow immediate 180)
+        var downResult = _engine.ChangeDirection(Direction.Down);
+        var leftResult = _engine.ChangeDirection(Direction.Left);
+
+        // Assert
+        downResult.Should().BeTrue();
+        leftResult.Should().BeTrue();
+        _engine.CurrentDirection.Should().Be(Direction.Down); // Should change to down immediately
+
+        // Update to process next queued direction
+        _engine.Update(1000); // This should move down and then process left direction
+
+        // After update, snake should be moving left (not crashed)
+        _engine.State.Should().Be(GameState.Playing);
+        _engine.CurrentDirection.Should().Be(Direction.Left);
+    }
+
+    [Fact]
+    public void ChangeDirection_QueuedOppositeDirection_ShouldBeIgnored()
+    {
+        // Arrange
+        _engine.Initialize(DefaultWidth, DefaultHeight);
+
+        // Act - Queue down, then try to queue up (opposite to down)
+        _engine.ChangeDirection(Direction.Down);
+        var oppositeResult = _engine.ChangeDirection(Direction.Up);
+
+        // Assert
+        oppositeResult.Should().BeFalse();
+
+        // Update and verify down direction is processed
+        _engine.Update(1000);
+        _engine.CurrentDirection.Should().Be(Direction.Down);
+    }
+
+    [Fact]
+    public void ChangeDirection_MaxQueueLimit_ShouldRejectExcessDirections()
+    {
+        // Arrange
+        _engine.Initialize(DefaultWidth, DefaultHeight);
+
+        // Act - Try to queue more than the maximum allowed directions
+        var result1 = _engine.ChangeDirection(Direction.Down);
+        var result2 = _engine.ChangeDirection(Direction.Left);
+        var result3 = _engine.ChangeDirection(Direction.Up); // Should be rejected (queue full)
+
+        // Assert
+        result1.Should().BeTrue();
+        result2.Should().BeTrue();
+        result3.Should().BeFalse(); // Should be rejected due to queue limit
+    }
+
+    [Fact]
+    public void ChangeDirection_DuplicateDirection_ShouldBeIgnored()
+    {
+        // Arrange
+        _engine.Initialize(DefaultWidth, DefaultHeight);
+
+        // Act - Try to queue the same direction twice
+        var result1 = _engine.ChangeDirection(Direction.Down);
+        var result2 = _engine.ChangeDirection(Direction.Down); // Duplicate
+
+        // Assert
+        result1.Should().BeTrue();
+        result2.Should().BeFalse(); // Should be rejected as duplicate
     }
 
     [Fact]

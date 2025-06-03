@@ -20,9 +20,7 @@ public class GameEnginePowerUpTests
         for (int i = 0; i < 100; i++)
         {
             engine.Update(100); // 100ms per update
-        }
-
-        // Assert
+        }        // Assert
         engine.PowerUps.Count.Should().BeLessOrEqualTo(2); // Max 2 power-ups as per specification
     }
 
@@ -100,9 +98,7 @@ public class GameEnginePowerUpTests
             ?.SetValue(engine, new List<PowerUp> { new PowerUp(PowerUpType.Shrink, powerUpPosition) });
 
         // Act
-        engine.Update(100); // Move snake into power-up
-
-        // Assert
+        engine.Update(100); // Move snake into power-up        // Assert
         engine.Snake.Count.Should().BeLessThan(grownLength);
         engine.Snake.Count.Should().BeGreaterOrEqualTo(3); // Never shrink below minimum length
     }
