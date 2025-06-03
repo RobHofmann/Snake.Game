@@ -91,13 +91,14 @@
 "category": "Core Game Mechanics",
 "status": "Completed",
 "dependencies": ["game-001"],
-"lastModified": "2025-06-02",
+"lastModified": "2025-06-03",
 "completionPercentage": 100,
 "codeLocation": {
 "path": "src/Snake.Domain/GameEngine",
 "files": [
 "IInputHandler.cs",
-"InputHandler.cs"
+"InputHandler.cs",
+"GameEngine.cs"
 ]
 },
 "implementation": {
@@ -105,9 +106,18 @@
 "Arrow key and WASD movement",
 "Space bar pause toggle",
 "Game over state handling",
-"Invalid input handling"
+"Invalid input handling",
+"Direction queue system to prevent 180-degree turns"
 ],
-"testCoverage": 100
+"testCoverage": 100,
+"bugFixes": [
+{
+"issue": "Snake could instantly reverse direction with rapid input, causing self-collision",
+"fix": "Implemented direction queue system that processes one direction change per game tick",
+"date": "2025-06-03",
+"details": "Added Queue<Direction> to buffer rapid input changes and prevent opposite direction moves"
+}
+]
 }
 },
 {
