@@ -60,7 +60,8 @@ public class GameService : BackgroundService
                 await Task.Delay(1000, stoppingToken); // Wait a bit on error
             }
         }
-    }    private async Task BroadcastGameState()
+    }
+    private async Task BroadcastGameState()
     {
         try
         {

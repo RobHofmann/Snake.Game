@@ -212,7 +212,7 @@ connection.on("UpdateGameState", (gameState) => {
   // - Score: current score value
   // - GameState: current state string ("Ready", "Playing", "Paused", "GameOver")
   // - IsShieldActive: boolean for shield power-up status
-  // - IsDoublePointsActive: boolean for double points power-up status  
+  // - IsDoublePointsActive: boolean for double points power-up status
   // - SpeedMultiplier: current speed multiplier from speed boost
 });
 
@@ -228,12 +228,12 @@ The game features a unified visual system for power-ups with consistent emoji ic
 
 #### Power-Up Types and Icons
 
-| Type | Icon | Color | Effect |
-|------|------|-------|--------|
-| Shield | 🛡️ | Yellow (#FFFF00) | Allows passing through walls |
-| DoublePoints | 2️⃣ | Pink (#FF00FF) | Doubles score for collected food |
-| SpeedBoost | ⚡ | Blue (#0080FF) | Increases snake movement speed |
-| Shrink | 🌿 | Green (#39FF14) | Instantly reduces snake length |
+| Type         | Icon | Color            | Effect                           |
+| ------------ | ---- | ---------------- | -------------------------------- |
+| Shield       | 🛡️   | Yellow (#FFFF00) | Allows passing through walls     |
+| DoublePoints | 2️⃣   | Pink (#FF00FF)   | Doubles score for collected food |
+| SpeedBoost   | ⚡   | Blue (#0080FF)   | Increases snake movement speed   |
+| Shrink       | 🌿   | Green (#39FF14)  | Instantly reduces snake length   |
 
 #### Visual Consistency
 

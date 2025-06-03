@@ -152,7 +152,8 @@ public class GameEngine : IGameEngine
         UpdatePowerUps(currentTickRate);
 
         return true;
-    }    private void UpdatePowerUps(float currentTickRate)
+    }
+    private void UpdatePowerUps(float currentTickRate)
     {
         // First handle all active power-ups
         var expiredEffects = _powerUps.Where(p => p.IsActive && !p.IsActiveEffect).ToList();
