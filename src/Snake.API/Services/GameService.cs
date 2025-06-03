@@ -71,7 +71,10 @@ public class GameService : BackgroundService
                 Food = _gameEngine.Food,
                 PowerUps = _gameEngine.PowerUps,
                 Score = _gameEngine.Score,
-                GameState = _gameEngine.State.ToString()
+                GameState = _gameEngine.State.ToString(),
+                IsShieldActive = _gameEngine.IsShieldActive,
+                IsDoublePointsActive = _gameEngine.IsDoublePointsActive,
+                SpeedMultiplier = _gameEngine.SpeedMultiplier
             });
         }
         catch (Exception ex)

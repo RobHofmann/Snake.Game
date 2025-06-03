@@ -1,5 +1,5 @@
 {
-"version": "1.3",
+"version": "1.4",
 "lastUpdated": "2025-06-03",
 "projectProgress": {
 "currentPhase": {
@@ -141,6 +141,11 @@
 {
 "issue": "Power-ups flashing and disappearing when arrow keys pressed",
 "fix": "Added PowerUps to SignalR broadcast in GameService.cs",
+"date": "2025-06-03"
+},
+{
+"issue": "Power-up text and snake color flashing during game updates",
+"fix": "Standardized SignalR broadcast structure between GameService and GameHub to include all power-up effect states",
 "date": "2025-06-03"
 }
 ]

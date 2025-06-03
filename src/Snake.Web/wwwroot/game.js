@@ -36,9 +36,7 @@ async function setupSignalR() {
         connection = new signalR.HubConnectionBuilder()
             .withUrl(`${API_BASE_URL}/gamehub`)
             .withAutomaticReconnect()
-            .build();
-
-        // Handle game state updates from server
+            .build();        // Handle game state updates from server
         connection.on('UpdateGameState', (state) => {
             console.log('Received game state update:', state);
             if (state) {
@@ -46,14 +44,22 @@ async function setupSignalR() {
                 score = state.score || 0;
                 snake = Array.isArray(state.snake) ? state.snake : [];
                 food = state.food || { x: 0, y: 0 };
-                // Preserve power-up color and type information during update
-                powerUps = Array.isArray(state.powerUps) ? state.powerUps.map(p => ({
-                    ...p,
-                    color: getPowerUpColor(p.type)
-                })) : [];
+                
+                // Update power-ups while preserving color information more efficiently
+                if (Array.isArray(state.powerUps)) {
+                    powerUps = state.powerUps.map(p => ({
+                        ...p,
+                        color: p.color || getPowerUpColor(p.type)
+                    }));
+                } else {
+                    powerUps = [];
+                }
+                
+                // Update power-up effect states consistently
                 isShieldActive = state.isShieldActive || false;
                 isDoublePointsActive = state.isDoublePointsActive || false;
                 speedMultiplier = state.speedMultiplier || 1.0;
+                
                 updateUI();
                 requestAnimationFrame(drawGame);
             }
