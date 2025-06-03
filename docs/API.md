@@ -222,6 +222,38 @@ connection.on("GameOver", (finalScore) => {
 });
 ```
 
+### 4.2.1 Power-Up Visual System
+
+The game features a unified visual system for power-ups with consistent emoji icons:
+
+#### Power-Up Types and Icons
+
+| Type | Icon | Color | Effect |
+|------|------|-------|--------|
+| Shield | 🛡️ | Yellow (#FFFF00) | Allows passing through walls |
+| DoublePoints | 2️⃣ | Pink (#FF00FF) | Doubles score for collected food |
+| SpeedBoost | ⚡ | Blue (#0080FF) | Increases snake movement speed |
+| Shrink | 🌿 | Green (#39FF14) | Instantly reduces snake length |
+
+#### Visual Consistency
+
+- **Playing Field**: Power-ups appear as emoji icons with colored glow effects
+- **Status Indicators**: Active power-ups show the same emoji icons in top-left panel
+- **Progress Rings**: Power-ups on field show expiration countdown as colored rings
+- **Background Circles**: Dark purple background circles improve icon visibility
+
+#### PowerUp Object Structure
+
+```javascript
+{
+  "position": { "x": 10, "y": 15 },
+  "type": "Shield",           // PowerUpType enum value
+  "color": "#FFFF00",         // Neon color for glow effects
+  "isExpired": false,
+  "remainingExpirationTimePercentage": 0.75  // For progress ring display
+}
+```
+
 ### 4.3 Leaderboard
 
 #### Get Current Leaderboard
