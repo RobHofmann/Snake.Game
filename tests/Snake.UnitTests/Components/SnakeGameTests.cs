@@ -10,7 +10,7 @@ public class SnakeGameTests : TestContext
 {
     // Component tests temporarily disabled - SnakeGame component not yet implemented
     // Tests will be re-enabled once the SnakeGame Blazor component is created
-    
+
     [Fact]
     public void Placeholder_Test_ShouldPass()
     {

@@ -21,7 +21,8 @@ public class GameEnginePowerUpTests
         {
             engine.Update(100); // 100ms per update
         }        // Assert
-        engine.PowerUps.Count.Should().BeLessOrEqualTo(2); // Max 2 power-ups as per specification
+        // engine.PowerUps.Count.Should().BeLessOrEqualTo(2); // Max 2 power-ups as per specification - commented out due to FluentAssertions method issue
+        Assert.True(engine.PowerUps.Count <= 2); // Max 2 power-ups as per specification
     }
 
     [Fact]
@@ -95,12 +96,10 @@ public class GameEnginePowerUpTests
 
         typeof(GameEngineClass)
             .GetField("_powerUps", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
-            ?.SetValue(engine, new List<PowerUp> { new PowerUp(PowerUpType.Shrink, powerUpPosition) });
-
-        // Act
+            ?.SetValue(engine, new List<PowerUp> { new PowerUp(PowerUpType.Shrink, powerUpPosition) });        // Act
         engine.Update(100); // Move snake into power-up        // Assert
         engine.Snake.Count.Should().BeLessThan(grownLength);
-        engine.Snake.Count.Should().BeGreaterOrEqualTo(3); // Never shrink below minimum length
+        engine.Snake.Count.Should().BeGreaterThanOrEqualTo(3); // Never shrink below minimum length
     }
 
     [Fact]

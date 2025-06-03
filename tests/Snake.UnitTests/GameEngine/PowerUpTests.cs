@@ -12,20 +12,17 @@ public class PowerUpTests
     {
         // Arrange
         var position = new Position(5, 5);
-        var powerUp = new PowerUp(PowerUpType.SpeedBoost, position);
+        var powerUp = new PowerUp(PowerUpType.SpeedBoost, position, 1); // 1 second duration for deterministic test
 
         // Act & Assert
         powerUp.IsExpired.Should().BeFalse();
 
         // Fast forward time by simulating maximum disappear time
         var expireTime = powerUp.ExpireTime;
-        ((Action)(() =>
-        {
-            typeof(PowerUp)
-                .GetProperty(nameof(PowerUp.SpawnTime))
-                ?.SetValue(powerUp, expireTime.AddSeconds(-20));
-        }))
-        .Should().NotThrow();
+        powerUp.SetSpawnTime(expireTime.AddSeconds(-20));
+
+        // Debug output
+        Console.WriteLine($"SpawnTime: {powerUp.SpawnTime}, ExpireTime: {powerUp.ExpireTime}, Now: {DateTime.UtcNow}");
 
         powerUp.IsExpired.Should().BeTrue();
     }

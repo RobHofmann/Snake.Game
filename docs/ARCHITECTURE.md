@@ -152,10 +152,25 @@ src/
    - Handles game timing and synchronization
 
 3. **Game Engine (GameEngine.cs)**
+
    - Core game logic implementation
    - Manages snake movement, growth, and collision detection
    - Tracks game state (playing, paused, game over)
    - Calculates scoring
+   - Handles PowerUp generation and management
+
+4. **PowerUp System (PowerUp.cs)**
+   - Manages different power-up types with distinct effects:
+     - SpeedBoost: Increases snake speed for 15 seconds
+     - Shield: Prevents death on wall collision for 10 seconds
+     - DoublePoints: Doubles all points earned for 20 seconds
+     - Shrink: Instantly reduces snake length by 30%
+   - Time-based expiration system:
+     - Random duration based on power-up type
+     - Visual countdown indicators
+     - Deterministic testing capability via `SetSpawnTime` method
+   - Effect duration tracking with activation/deactivation times
+   - Progress percentage calculations for UI display
 
 ## 3. Data Architecture
 
@@ -211,6 +226,12 @@ src/
 - Frame-based animation loop
 - Collision detection system
 - Power-up management
+  - Time-based expiration system with deterministic test capabilities
+  - Effect duration tracking with percentage calculation
+  - Spawn time and expiration time management
+  - Activation and deactivation lifecycle handling
+  - Test-friendly design with optional constructor parameters
+  - Methods for controlling time values in tests (`SetSpawnTime`)
 - State management
 
 ### 4.2 Input System

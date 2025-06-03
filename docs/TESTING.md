@@ -34,6 +34,8 @@ The testing approach follows the standard testing pyramid:
   - Collision detection
   - Scoring logic
   - Input handling
+  - PowerUp expiration and activation
+  - Time-based mechanics
 
 **Example Unit Test**:
 
@@ -58,6 +60,30 @@ public class GameEngineTests
 
         // Assert
         snake.Length.Should().Be(initialLength + 1, "because the snake should grow by 1 when eating food");
+    }
+}
+```
+
+**Example Time-Based PowerUp Test**:
+
+```csharp
+public class PowerUpTests
+{
+    [Fact]
+    public void PowerUp_ShouldExpireAfterSpecifiedTime()
+    {
+        // Arrange
+        var position = new Position(5, 5);
+        var powerUp = new PowerUp(PowerUpType.SpeedBoost, position, 1); // 1 second duration for deterministic test
+
+        // Act & Assert
+        powerUp.IsExpired.Should().BeFalse();
+
+        // Fast forward time by simulating maximum disappear time
+        var expireTime = powerUp.ExpireTime;
+        powerUp.SetSpawnTime(expireTime.AddSeconds(-20));
+
+        powerUp.IsExpired.Should().BeTrue();
     }
 }
 ```
@@ -217,6 +243,10 @@ public class GamePlayTests
 3. **One Assert Per Test**: Focus on testing one behavior per test
 4. **Avoid Logic in Tests**: Keep tests simple and straightforward
 5. **Isolate Tests**: No dependency between tests
+6. **Deterministic Time-Based Testing**: For components relying on time (like PowerUps):
+   - Use constructor parameters for test-controlled durations
+   - Provide test-specific methods to control time values (e.g., `SetSpawnTime`)
+   - Avoid depending on actual system time in tests
 
 ## 9. Key Test Scenarios
 

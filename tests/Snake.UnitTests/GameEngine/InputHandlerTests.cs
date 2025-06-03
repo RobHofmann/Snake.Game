@@ -7,49 +7,53 @@ namespace Snake.UnitTests.GameEngine;
 public class InputHandlerTests
 {
     private readonly IGameEngine _engine;
-    private readonly IInputHandler _inputHandler;    public InputHandlerTests()
+    private readonly IInputHandler _inputHandler; public InputHandlerTests()
     {
         _engine = new Snake.Domain.GameEngine.GameEngine();
         _inputHandler = new InputHandler(_engine);
     }
-
     [Fact]
     public void HandleKeyPress_ArrowKeys_ShouldChangeDirection()
     {
         // Arrange
         _engine.Initialize(20, 20);
 
-        // Act & Assert
+        // Act & Assert - Direction changes are queued and applied on next update
         _inputHandler.HandleKeyPress("ArrowUp").Should().BeTrue();
+        _engine.Update(100); // Process queued direction
         _engine.CurrentDirection.Should().Be(Direction.Up);
 
         _inputHandler.HandleKeyPress("ArrowRight").Should().BeTrue();
+        _engine.Update(100); // Process queued direction
         _engine.CurrentDirection.Should().Be(Direction.Right);
 
         _inputHandler.HandleKeyPress("ArrowDown").Should().BeTrue();
+        _engine.Update(100); // Process queued direction
         _engine.CurrentDirection.Should().Be(Direction.Down);
 
         _inputHandler.HandleKeyPress("ArrowLeft").Should().BeTrue();
+        _engine.Update(100); // Process queued direction
         _engine.CurrentDirection.Should().Be(Direction.Left);
     }
-
     [Fact]
     public void HandleKeyPress_WASDKeys_ShouldChangeDirection()
     {
         // Arrange
         _engine.Initialize(20, 20);
 
-        // Act & Assert
+        // Act & Assert - Direction changes are queued and applied on next update
         _inputHandler.HandleKeyPress("w").Should().BeTrue();
+        _engine.Update(100); // Process queued direction
         _engine.CurrentDirection.Should().Be(Direction.Up);
 
         _inputHandler.HandleKeyPress("d").Should().BeTrue();
+        _engine.Update(100); // Process queued direction
         _engine.CurrentDirection.Should().Be(Direction.Right);
 
         _inputHandler.HandleKeyPress("s").Should().BeTrue();
-        _engine.CurrentDirection.Should().Be(Direction.Down);
-
-        _inputHandler.HandleKeyPress("a").Should().BeTrue();
+        _engine.Update(100); // Process queued direction
+        _engine.CurrentDirection.Should().Be(Direction.Down); _inputHandler.HandleKeyPress("a").Should().BeTrue();
+        _engine.Update(100); // Process queued direction
         _engine.CurrentDirection.Should().Be(Direction.Left);
     }
 

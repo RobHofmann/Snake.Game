@@ -14,34 +14,55 @@ public enum PowerUpType
 public class PowerUp
 {
     private readonly Random _random = new();
+    private readonly int _disappearTimeInSeconds;
 
     public PowerUpType Type { get; private set; }
     public Position Position { get; private set; }
-    public DateTime SpawnTime { get; private set; }
-    public DateTime ExpireTime { get; private set; }
+    private DateTime _spawnTime;
+    public DateTime SpawnTime
+    {
+        get => _spawnTime;
+        set
+        {
+            _spawnTime = value;
+            ExpireTime = _spawnTime.AddSeconds(_disappearTimeInSeconds);
+        }
+    }
+    private DateTime _expireTime;
+    public DateTime ExpireTime
+    {
+        get => _expireTime;
+        private set
+        {
+            _expireTime = value;
+            // No need to update DisappearTimeInSeconds, as it's a computed property
+        }
+    }
     public bool IsActive { get; private set; }
-    public DateTime? ActivationTime { get; private set; }
+    private DateTime? _activationTime;
+    public DateTime? ActivationTime
+    {
+        get => _activationTime;
+        set
+        {
+            _activationTime = value;
+            if (_activationTime.HasValue)
+            {
+                if (EffectDurationInSeconds > 0)
+                    DeactivationTime = _activationTime.Value.AddSeconds(EffectDurationInSeconds);
+                else
+                    DeactivationTime = _activationTime;
+            }
+        }
+    }
     public DateTime? DeactivationTime { get; private set; }
     public bool IsExpired => DateTime.UtcNow > ExpireTime;
 
     public bool IsActiveEffect =>
         IsActive && ActivationTime.HasValue &&
-        (DeactivationTime == null || DateTime.UtcNow < DeactivationTime.Value);
+        (DeactivationTime == null || DateTime.UtcNow <= DeactivationTime.Value);
 
-    public int DisappearTimeInSeconds
-    {
-        get
-        {
-            return Type switch
-            {
-                PowerUpType.SpeedBoost => _random.Next(5, 16),    // 5-15 seconds
-                PowerUpType.Shield => _random.Next(8, 21),        // 8-20 seconds
-                PowerUpType.DoublePoints => _random.Next(10, 26), // 10-25 seconds
-                PowerUpType.Shrink => _random.Next(3, 11),        // 3-10 seconds
-                _ => 10
-            };
-        }
-    }
+    public int DisappearTimeInSeconds => _disappearTimeInSeconds;
     public int EffectDurationInSeconds
     {
         get
@@ -72,12 +93,20 @@ public class PowerUp
         }
     }
 
-    public PowerUp(PowerUpType type, Position position)
+    public PowerUp(PowerUpType type, Position position, int? disappearTimeInSeconds = null)
     {
         Type = type;
         Position = position;
-        SpawnTime = DateTime.UtcNow;
-        ExpireTime = SpawnTime.AddSeconds(DisappearTimeInSeconds);
+        _disappearTimeInSeconds = disappearTimeInSeconds ?? type switch
+        {
+            PowerUpType.SpeedBoost => _random.Next(5, 16),    // 5-15 seconds
+            PowerUpType.Shield => _random.Next(8, 21),        // 8-20 seconds
+            PowerUpType.DoublePoints => _random.Next(10, 26), // 10-25 seconds
+            PowerUpType.Shrink => _random.Next(3, 11),        // 3-10 seconds
+            _ => 10
+        };
+        _spawnTime = DateTime.UtcNow;
+        ExpireTime = _spawnTime.AddSeconds(_disappearTimeInSeconds);
         IsActive = false;
     }
 
@@ -85,7 +114,6 @@ public class PowerUp
     {
         IsActive = true;
         ActivationTime = DateTime.UtcNow;
-
         if (EffectDurationInSeconds > 0)
         {
             DeactivationTime = ActivationTime.Value.AddSeconds(EffectDurationInSeconds);
@@ -110,12 +138,9 @@ public class PowerUp
                 return 0;
 
             var now = DateTime.UtcNow;
-            if (now >= DeactivationTime.Value)
-                return 0;
-
             var totalDuration = (DeactivationTime.Value - ActivationTime.Value).TotalMilliseconds;
             var remaining = (DeactivationTime.Value - now).TotalMilliseconds;
-
+            if (totalDuration <= 0) return 0;
             return Math.Clamp(remaining / totalDuration, 0, 1);
         }
     }
@@ -133,5 +158,11 @@ public class PowerUp
 
             return Math.Clamp(remaining / totalDuration, 0, 1);
         }
+    }
+
+    // For testing: allow setting spawn time and update expire time accordingly
+    public void SetSpawnTime(DateTime time)
+    {
+        SpawnTime = time;
     }
 }

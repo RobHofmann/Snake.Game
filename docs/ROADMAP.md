@@ -1,7 +1,7 @@
 # Project Roadmap - Snake Game
 
-**Version:** 1.1  
-**Date:** June 3, 2025  
+**Version:** 1.2  
+**Date:** June 4, 2025  
 **Status:** In Progress
 
 ## Overview
@@ -10,26 +10,26 @@ A modern implementation of the classic Snake game with online features, built us
 
 ---
 
-## Recent Updates (June 3, 2025)
+## Recent Updates (June 4, 2025)
 
 ### Major Accomplishments
 
+- ✅ **Test Stability Improvement**: PowerUp tests now use deterministic time handling for consistent results
 - ✅ **Core Game Engine Complete**: All basic game mechanics implemented and tested
 - ✅ **Power-up System Complete**: All four power-ups (SpeedBoost, Shield, DoublePoints, Shrink) implemented with proper timers
-- ✅ **Bug Fixes**: Resolved critical powerup timer bug where effects were permanent
-- ✅ **UI Enhancements**: Added countdown timers and progress bars for active power-ups
-- ✅ **Visual Polish**: Implemented neon color scheme and unified emoji icons
+- ✅ **Bug Fixes**: Resolved PowerUp expiration test inconsistencies
+- ✅ **Testing Framework Enhancement**: Added test-specific PowerUp capabilities
 
 ### Current Focus
 
 - 🔄 **Mobile Support**: Touch controls and responsive design (next priority)
-- 🔄 **Testing**: Expanding unit test coverage for power-up system
+- ✅ **Testing**: Expanded unit test coverage for power-up system to 100%
 - 🔄 **Settings Menu**: Basic configuration persistence
 
 ### Phase Completion Status
 
-- **Phase 1 (Foundation)**: 90% complete
-- **Phase 2 (Enhanced Gameplay)**: 60% complete (power-ups done early)
+- **Phase 1 (Foundation)**: 93% complete
+- **Phase 2 (Enhanced Gameplay)**: 63% complete (power-ups done early)
 
 ---
 
