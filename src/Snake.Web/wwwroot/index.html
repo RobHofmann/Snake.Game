@@ -25,12 +25,32 @@
                     <li>Space to pause/resume</li>
                 </ul>
             </div>
-        </div>
-
-        <div id="gameOver" class="game-over hide">
+        </div>        <div id="gameOver" class="game-over hide">
             <h2>Game Over!</h2>
             <p>Final Score: <span id="finalScore">0</span></p>
             <button id="playAgain">Play Again</button>
+            <div class="leaderboard">
+                <h3>High Scores</h3>
+                <div class="leaderboard-tabs">
+                    <button class="tab active" data-period="daily">Today</button>
+                    <button class="tab" data-period="weekly">Week</button>
+                    <button class="tab" data-period="monthly">Month</button>
+                    <button class="tab" data-period="all">All Time</button>
+                </div>
+                <div class="leaderboard-content">
+                    <table id="leaderboardTable">
+                        <thead>
+                            <tr>
+                                <th>Rank</th>
+                                <th>Player</th>
+                                <th>Score</th>
+                                <th>Date</th>
+                            </tr>
+                        </thead>
+                        <tbody id="leaderboardBody"></tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     </div>
 

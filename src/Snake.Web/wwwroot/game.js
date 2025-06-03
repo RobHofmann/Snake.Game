@@ -10,6 +10,7 @@ let snake = [];
 let food = { x: 0, y: 0 };
 let powerUps = [];
 let activePowerUpEffects = []; // Track active powerup effects with timers
+let gameStartTime = 0; // Track when game started
 let connection = null;
 
 // Game state indicators
@@ -331,15 +332,93 @@ function updateUI() {
         startScreen.classList.remove('hide');
         gameOverScreen.classList.add('hide');
         canvas.classList.add('hide');
-    } else if (gameState === 'GameOver') {
-        startScreen.classList.add('hide');
-        gameOverScreen.classList.remove('hide');
-        canvas.classList.remove('hide');
-    } else {
-        startScreen.classList.add('hide');
-        gameOverScreen.classList.add('hide');
-        canvas.classList.remove('hide');
+    } else if (gameState === 'GameOver') {            startScreen.classList.add('hide');
+            gameOverScreen.classList.remove('hide');
+            canvas.classList.remove('hide');
+            submitScore(); // Submit score when game is over
+        } else {
+            startScreen.classList.add('hide');
+            gameOverScreen.classList.add('hide');
+            canvas.classList.remove('hide');
+        }
     }
+
+    // Function to submit score to leaderboard
+    async function submitScore() {
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/leaderboard/scores`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    playerName: localStorage.getItem('playerName') || 'Anonymous',
+                    score: score,
+                    gameTime: Math.floor((Date.now() - gameStartTime) / 1000),
+                    region: 'global'
+                })
+            });
+
+            if (response.ok) {
+                const result = await response.json();
+                console.log('Score submitted successfully:', result);
+            } else {
+                console.error('Failed to submit score:', response.statusText);
+            }
+        } catch (error) {
+            console.error('Error submitting score:', error);
+        }
+    }
+
+// Leaderboard functionality
+let currentLeaderboardPeriod = 'daily';
+
+async function fetchLeaderboard(period = 'daily') {
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/leaderboard/scores/top?limit=10`);
+        if (response.ok) {
+            const scores = await response.json();
+            updateLeaderboardUI(scores);
+        } else {
+            console.error('Failed to fetch leaderboard:', response.statusText);
+        }
+    } catch (error) {
+        console.error('Error fetching leaderboard:', error);
+    }
+}
+
+function updateLeaderboardUI(scores) {
+    const tbody = document.getElementById('leaderboardBody');
+    tbody.innerHTML = '';
+
+    scores.forEach((score, index) => {
+        const row = document.createElement('tr');
+        const date = new Date(score.timestamp);
+        row.innerHTML = `
+            <td>${index + 1}</td>
+            <td>${score.playerName}</td>
+            <td>${score.score}</td>
+            <td>${date.toLocaleDateString()}</td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+// Add event listeners for leaderboard tabs
+document.querySelectorAll('.leaderboard-tabs .tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+        document.querySelectorAll('.leaderboard-tabs .tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        currentLeaderboardPeriod = tab.dataset.period;
+        fetchLeaderboard(currentLeaderboardPeriod);
+    });
+});
+
+// Update leaderboard when game ends
+function gameOver() {
+    gameState = 'GameOver';
+    updateUI();
+    fetchLeaderboard(currentLeaderboardPeriod);
 }
 
 // Input handling
@@ -368,8 +447,8 @@ async function handleInput(key) {
         case 'D':
             direction = 'Right';
             break;
-        case ' ':
-            if (gameState === 'Ready') {
+        case ' ':            if (gameState === 'Ready') {
+                gameStartTime = Date.now();
                 await connection.invoke('StartGame');
             } else if (gameState === 'Playing') {
                 await connection.invoke('PauseGame');
@@ -409,6 +488,7 @@ async function init() {
     await setupSignalR();
     updateUI();
     gameLoop();
+    fetchLeaderboard(); // Load initial leaderboard
 }
 
 // Handle roundRect for older browsers

@@ -9,6 +9,7 @@ using System.Text.Json.Serialization;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
+builder.Services.AddControllers();
 builder.Services.AddSignalR(options =>
 {
     options.EnableDetailedErrors = true;
@@ -46,7 +47,8 @@ app.UseHttpsRedirection();
 app.UseRouting();
 app.UseCors();
 
-// Map SignalR hub
+// Map controllers and SignalR hub
+app.MapControllers();
 app.MapHub<GameHub>("/gamehub");
 
 // Map health check endpoint

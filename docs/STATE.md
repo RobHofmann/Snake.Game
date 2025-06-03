@@ -1,5 +1,5 @@
 {
-"version": "1.6",
+"version": "1.7",
 "lastUpdated": "2025-06-04",
 "projectProgress": {
 "currentPhase": {
@@ -292,6 +292,9 @@
 "description": "Add high score persistence to backend",
 "dependsOn": ["backend-001"],
 "estimatedEffort": "8 hours",
+"completionDate": "2025-06-04",
+"completionDetails": "Implemented high score persistence with CosmosDB backend, LeaderboardController API endpoints, and frontend integration for score submission",
+"status": "Completed",
 "priority": 1
 },
 {
@@ -299,6 +302,9 @@
 "description": "Implement leaderboard UI",
 "dependsOn": ["ui-001", "step-002"],
 "estimatedEffort": "12 hours",
+"completionDate": "2025-06-04",
+"completionDetails": "Added leaderboard UI with tabs for different time periods, table view of high scores, and automatic updates when game ends",
+"status": "Completed",
 "priority": 2
 },
 {
