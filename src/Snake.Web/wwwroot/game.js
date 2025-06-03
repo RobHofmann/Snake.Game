@@ -20,8 +20,9 @@ let speedMultiplier = 1.0;
 // Canvas setup
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
+// Set canvas dimensions with extra height for powerup panel below
 canvas.width = BOARD_SIZE.width * CELL_SIZE;
-canvas.height = BOARD_SIZE.height * CELL_SIZE;
+canvas.height = BOARD_SIZE.height * CELL_SIZE + 100; // Extra space for powerup panel
 
 // DOM elements
 const scoreElement = document.getElementById('score');
@@ -85,24 +86,23 @@ async function setupSignalR() {
 
 // Game drawing functions
 function drawGame() {
-    if (!ctx || snake.length === 0) return;
-
-    // Clear canvas
+    if (!ctx || snake.length === 0) return;    // Clear entire canvas
     ctx.fillStyle = '#1a0b2e'; // Dark purple background as per PRD
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Draw grid
+    // Draw grid only in the game area (not in the powerup panel area)
+    const gameAreaWidth = BOARD_SIZE.width * CELL_SIZE;
     ctx.strokeStyle = '#2a1a3e'; // Slightly lighter purple for grid
     for (let x = 0; x <= BOARD_SIZE.width; x++) {
         ctx.beginPath();
         ctx.moveTo(x * CELL_SIZE, 0);
-        ctx.lineTo(x * CELL_SIZE, canvas.height);
+        ctx.lineTo(x * CELL_SIZE, BOARD_SIZE.height * CELL_SIZE);
         ctx.stroke();
     }
     for (let y = 0; y <= BOARD_SIZE.height; y++) {
         ctx.beginPath();
         ctx.moveTo(0, y * CELL_SIZE);
-        ctx.lineTo(canvas.width, y * CELL_SIZE);
+        ctx.lineTo(gameAreaWidth, y * CELL_SIZE);
         ctx.stroke();
     }
 
@@ -210,48 +210,60 @@ function drawGame() {
     }
       ctx.restore();    // Draw active power-up effect indicators with countdown timers
     if (activePowerUpEffects && activePowerUpEffects.length > 0) {
+        // Position panel below the playing field
+        const gameAreaHeight = BOARD_SIZE.height * CELL_SIZE;
+        const panelX = 5;
+        const panelY = gameAreaHeight + 10;
+        const panelWidth = canvas.width - 10;
+        const panelHeight = 50; // Fixed height for panel
+        
         // Draw semi-transparent panel
-        ctx.fillStyle = 'rgba(26, 11, 46, 0.9)'; // Match game background with alpha
-        ctx.fillRect(5, 5, 280, (activePowerUpEffects.length * 40) + 10);
+        ctx.fillStyle = 'rgba(26, 11, 46, 0.9)';
+        ctx.fillRect(panelX, panelY, panelWidth, panelHeight);
         
         // Draw each active effect with countdown timer
         ctx.font = 'bold 16px Arial';
         ctx.textBaseline = 'middle';
         
+        // Calculate spacing between effects based on panel width and number of effects
+        const effectWidth = Math.min(280, panelWidth / activePowerUpEffects.length);
+        
         activePowerUpEffects.forEach((effect, index) => {
-            const y = 25 + (index * 40);
+            const x = panelX + (effectWidth * index) + 15;
+            const y = panelY + 25;
             
             // Draw icon with glow
             ctx.save();
             ctx.shadowBlur = 10;
             ctx.shadowColor = effect.color;
             ctx.fillStyle = effect.color;
-            ctx.fillText(getPowerUpIcon(effect.type), 15, y);
+            ctx.fillText(getPowerUpIcon(effect.type), x, y);
             
             // Draw effect name
             ctx.shadowBlur = 0;
             ctx.fillStyle = '#ffffff';
-            ctx.fillText(getEffectName(effect.type), 45, y);
-            
-            // Draw countdown timer
-            const remainingPercent = effect.remainingEffectTimePercentage || 0;
-            const remainingSeconds = Math.ceil(remainingPercent * effect.effectDurationInSeconds);
-            ctx.fillStyle = '#ffff00';
-            ctx.fillText(`${remainingSeconds}s`, 220, y);
-            
-            // Draw progress bar
-            const barWidth = 100;
-            const barHeight = 6;
-            const barX = 120;
-            const barY = y - barHeight / 2;
+            ctx.textAlign = 'left';
+            ctx.fillText(getEffectName(effect.type), x + 30, y);
             
             // Background bar
+            const barWidth = 60;
+            const barHeight = 6;
+            const barX = x + effectWidth - 100;
+            const barY = y - barHeight / 2;
+            
             ctx.fillStyle = '#2a1a3e';
             ctx.fillRect(barX, barY, barWidth, barHeight);
             
             // Progress bar
+            const remainingPercent = effect.remainingEffectTimePercentage || 0;
             ctx.fillStyle = effect.color;
             ctx.fillRect(barX, barY, barWidth * remainingPercent, barHeight);
+            
+            // Draw countdown timer
+            const remainingSeconds = Math.ceil(remainingPercent * effect.effectDurationInSeconds);
+            ctx.fillStyle = '#ffff00';
+            ctx.textAlign = 'left';
+            ctx.fillText(`${remainingSeconds}s`, barX + barWidth + 5, y);
             
             ctx.restore();
         });

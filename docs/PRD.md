@@ -99,6 +99,15 @@ Power-up System Rules:
 
 - Current score
 - Current snake length
+- Active power-up effects panel:
+  - Located below the game field
+  - Horizontal layout with:
+    - Power-up icon (with color-matched glow)
+    - Effect name
+    - Progress bar showing remaining duration
+    - Countdown timer in seconds
+  - Semi-transparent background for better visibility
+  - Automatic spacing based on number of active effects
 - Time played
 - Power-ups collected
 - Pause functionality

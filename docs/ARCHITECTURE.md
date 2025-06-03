@@ -55,24 +55,45 @@ Key Components:
 
 #### Frontend Components
 
-1. **HTML Structure**
+1. **HTML Structure** - Canvas element for game rendering
 
-   - Canvas element for game rendering
    - Score and status displays
    - Game controls and modal screens
+   - Power-up effects panel below game field
 
-2. **CSS Styling**
+2. **CSS Styling and Layout**
 
-   - Responsive layout for different screen sizes
-   - Game board and UI element styling
-   - Transitions and animations for game elements
+   - Game board dimensions: 600×600 pixels (30×30 cells)
+   - Power-up panel below game board: Full width × 50 pixels
+   - Semi-transparent backgrounds for UI overlays
+   - Responsive layout with breakpoints
+   - Neon glow effects for game elements
+   - Horizontal layout for power-up indicators
+     - Icon with color-matched glow
+     - Effect name in white
+     - Progress bar showing duration
+     - Timer in yellow text
 
 3. **JavaScript Logic**
+
    - SignalR connection management
-   - Canvas rendering engine
    - Input handling (keyboard and touch)
    - Game state management
    - UI updates and animations
+
+4. **Canvas Rendering Engine**
+   - Layer-based drawing system:
+     1. Background and grid (game area only)
+     2. Snake segments with shield effect
+     3. Food items with glow
+     4. Power-up items with expiration rings
+     5. Power-up status panel (below game area)
+   - Double buffering for smooth animations
+   - Optimized rendering areas:
+     - Game field: 600×600 pixels
+     - UI panel: 600×50 pixels
+   - GPU-accelerated when available
+   - 60 FPS target refresh rate
 
 ### 2.2 Backend Architecture
 

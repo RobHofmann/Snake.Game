@@ -133,18 +133,21 @@
 "Effect duration management with countdown timers",
 "Timer reset when collecting same powerup type while active",
 "Maximum 2 power-ups on screen simultaneously",
-"SignalR broadcasting of power-up state"
+"SignalR broadcasting of power-up state",
+"Enhanced powerup UI with horizontal layout below game field",
+"Progress bars with countdown timers for active effects",
+"Improved visibility with semi-transparent backgrounds"
 ],
 "testCoverage": 85,
 "knownIssues": [], "bugFixes": [
 {
-"issue": "Power-ups flashing and disappearing when arrow keys pressed",
-"fix": "Added PowerUps to SignalR broadcast in GameService.cs",
+"issue": "Power-up timer text overlapping with progress bars",
+"fix": "Redesigned powerup panel layout with proper spacing and positioning below game area",
 "date": "2025-06-03"
 },
 {
-"issue": "Power-up text and snake color flashing during game updates",
-"fix": "Standardized SignalR broadcast structure between GameService and GameHub to include all power-up effect states",
+"issue": "Power-ups obscuring snake visibility in game field",
+"fix": "Moved powerup status panel below the game field for unobstructed gameplay",
 "date": "2025-06-03"
 },
 {
