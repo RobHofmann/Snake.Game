@@ -292,13 +292,15 @@ public class GamePlayTests
 **Root Cause**: Flags only set for Ready→Playing transitions, missing other patterns
 
 **Test Files Created**:
+
 - `test_final_fix.html` - Standalone logic verification
-- `test_modal_race_condition_fix.html` - Race condition testing  
+- `test_modal_race_condition_fix.html` - Race condition testing
 - `test_race_condition_fix_verification.html` - Full game integration test
 
 **Test Scenarios Covered**:
+
 1. **Direct Ready→GameOver** with score 450 (should show modal)
-2. **GameOver→Playing→GameOver** with score 500 (should show modal)  
+2. **GameOver→Playing→GameOver** with score 500 (should show modal)
 3. **Standard Ready→Playing** transition (should still work)
 4. **Race condition protection** with 100ms delays
 5. **Flag validation** across all transition patterns
