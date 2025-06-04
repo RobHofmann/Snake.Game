@@ -14,11 +14,18 @@ let snake = [];
 let food = { x: 0, y: 0 };
 let powerUps = [];
 let activePowerUpEffects = []; // Track active powerup effects with timers
+let lastActivePowerUpEffects = []; // Track last powerup effects hash to minimize redraws
+let stablePowerUpEffects = []; // STABLE version of powerup effects to prevent flashing
+let powerupDataHistory = []; // Track recent powerup data to detect inconsistencies
+let lastPowerupPanelUpdate = 0; // Track when we last updated the powerup panel for timers
+let lastGameRender = 0; // Track when we last rendered the main game area
+let lastGameStateHash = ''; // Track game state changes to prevent unnecessary renders
 let gameStartTime = 0; // Track when game started
 let connection = null;
 let scoreSubmitted = false; // Track if score has been submitted for current game session
 let gameWasPlayed = false; // Track if a real game was played (not just page load)
 let pageLoadTime = Date.now(); // Track when page was loaded to prevent initial modal
+let powerupPanelFrozen = false; // NUCLEAR OPTION: Completely freeze powerup panel during gameplay
 
 // Mobile touch variables
 let touchStartX = 0;
@@ -34,9 +41,16 @@ let speedMultiplier = 1.0;
 // Canvas setup
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
-// Set canvas dimensions with extra height for powerup panel below
+const powerupCanvas = document.getElementById('powerupCanvas');
+const powerupCtx = powerupCanvas.getContext('2d');
+
+// Set main game canvas dimensions to exact game area
 canvas.width = BOARD_SIZE.width * CELL_SIZE;
-canvas.height = BOARD_SIZE.height * CELL_SIZE + 100; // Extra space for powerup panel
+canvas.height = BOARD_SIZE.height * CELL_SIZE;
+
+// Set powerup panel canvas dimensions 
+powerupCanvas.width = BOARD_SIZE.width * CELL_SIZE;
+powerupCanvas.height = 60; // Height for powerup panel
 
 // DOM elements
 const scoreElement = document.getElementById('score');
@@ -51,26 +65,26 @@ const submitHighScoreButton = document.getElementById('submitHighScore');
 const skipHighScoreButton = document.getElementById('skipHighScore');
 const highScoreValueElement = document.getElementById('highScoreValue');
 
-// NUCLEAR OPTION: Completely prevent modal from showing for first 15 seconds
-if (nameInputModal) {
-    const originalRemove = nameInputModal.classList.remove;
-      // Override remove method to block showing modal
-    nameInputModal.classList.remove = function(className) {
-        const timeSincePageLoad = Date.now() - pageLoadTime;
-        if (className === 'hide' && timeSincePageLoad < 15000) {
-            return; // Block the modal from being shown
-        }
-        return originalRemove.call(this, className);
-    };
-    
-    // Restore normal behavior after 15 seconds
-    setTimeout(() => {
-        nameInputModal.classList.remove = originalRemove;
-    }, 15000);
-      // Ensure modal starts hidden
-    nameInputModal.classList.add('hide');
-    nameInputModal.style.display = 'none';
-}
+//// NUCLEAR OPTION: Completely prevent modal from showing for first 15 seconds
+//if (nameInputModal) {
+//    const originalRemove = nameInputModal.classList.remove;
+//      // Override remove method to block showing modal
+//    nameInputModal.classList.remove = function(className) {
+//        const timeSincePageLoad = Date.now() - pageLoadTime;
+//        if (className === 'hide' && timeSincePageLoad < 15000) {
+//            return; // Block the modal from being shown
+//        }
+//        return originalRemove.call(this, className);
+//    };
+//    
+//    // Restore normal behavior after 15 seconds
+//    setTimeout(() => {
+//        nameInputModal.classList.remove = originalRemove;
+//    }, 15000);
+//      // Ensure modal starts hidden
+//    nameInputModal.classList.add('hide');
+//    nameInputModal.style.display = 'none';
+//}
 
 // Set up SignalR connection
 async function setupSignalR() {
@@ -80,26 +94,40 @@ async function setupSignalR() {
             .withAutomaticReconnect()
             .build();        // Handle game state updates from server
         connection.on('UpdateGameState', (state) => {
-            if (state) {
-                const previousGameState = gameState;
+            if (state) {                const previousGameState = gameState;
                 const previousScore = score;
+                const previousSnakeLength = snake.length;
                 
                 gameState = state.gameState || 'Ready';
                 score = state.score || 0;
                 snake = Array.isArray(state.snake) ? state.snake : [];
-                food = state.food || { x: 0, y: 0 };
-                
-                // Only log significant state changes, not every update
-                if (previousGameState !== gameState || Math.abs(previousScore - score) > 0) {
-                    console.log(`Game state: ${previousGameState} → ${gameState}, score: ${previousScore} → ${score}`);
-                }                // Set gameStartTime when transitioning from Ready to Playing
+                food = state.food || { x: 0, y: 0 };                // Only log significant state changes, not every update
+                if (previousGameState !== gameState) {
+                    console.log(`Game state: ${previousGameState} → ${gameState}, score: ${score}`);
+                }// Set gameStartTime when transitioning from Ready to Playing
                 if (previousGameState === 'Ready' && gameState === 'Playing' && gameStartTime === 0) {
                     gameStartTime = Date.now();
                     gameWasPlayed = true; // Mark that a real game was started
-                    console.log('🎮 Game started by player, gameWasPlayed=true');
+                    powerupPanelFrozen = true; // FREEZE powerup panel during gameplay
+                    
+                    //// NUCLEAR OPTION: Completely hide the powerup canvas during gameplay
+                    //if (powerupCanvas) {
+                    //    powerupCanvas.style.display = 'none';
+                    //    console.log('🎮 Game started, powerup canvas HIDDEN');
+                    //}
                 }
                 
-                // Update power-ups while preserving color information more efficiently
+                // Show powerup panel when game ends
+                if (gameState === 'GameOver' && powerupPanelFrozen) {
+                    powerupPanelFrozen = false;
+                    
+                    // Show the powerup canvas again
+                    if (powerupCanvas) {
+                        powerupCanvas.style.display = 'block';
+                        console.log('🎮 Game ended, powerup canvas SHOWN');
+                    }
+                }// Update power-ups while preserving color information more efficiently
+                const previousPowerUpsState = JSON.stringify(powerUps || []);
                 if (Array.isArray(state.powerUps)) {
                     powerUps = state.powerUps.map(p => ({
                         ...p,
@@ -107,25 +135,95 @@ async function setupSignalR() {
                     }));
                 } else {
                     powerUps = [];
-                }
+                }                // Only force redraw for significant changes, not direction-only updates
+                const currentPowerUpsState = JSON.stringify(powerUps);
+                const snakeGrew = snake.length > previousSnakeLength;
+                const scoreChanged = score !== previousScore;
+                const powerUpsChanged = currentPowerUpsState !== previousPowerUpsState;
+                const gameStateChanged = gameState !== previousGameState;
                 
-                // Update active powerup effects with countdown timers
-                if (Array.isArray(state.activePowerUpEffects)) {
-                    activePowerUpEffects = state.activePowerUpEffects.map(p => ({
-                        ...p,
-                        color: p.color || getPowerUpColor(p.type)
-                    }));
+                if (powerUpsChanged || snakeGrew || scoreChanged || gameStateChanged) {
+                    lastGameStateHash = ''; // Force redraw only for meaningful changes
+                }                // POWERUP PANEL STABILITY SYSTEM - Filter out inconsistent server data
+                if (!powerupPanelFrozen) {
+                    // Track powerup data history to detect server inconsistencies
+                    powerupDataHistory.push({
+                        timestamp: Date.now(),
+                        length: state.activePowerUpEffects ? state.activePowerUpEffects.length : 0,
+                        state: gameState
+                    });
+                    
+                    // Keep only last 10 entries for analysis
+                    if (powerupDataHistory.length > 10) {
+                        powerupDataHistory.shift();
+                    }
+
+                    // Implement powerup data stability filter
+                    let effectsToUse = state.activePowerUpEffects || [];
+                    
+                    if (effectsToUse) {
+                        const currentLength = effectsToUse.length;
+                        const currentTime = Date.now();
+                        
+                        // Check if we have recent history to compare against
+                        const recentEntries = powerupDataHistory.filter(entry => 
+                            currentTime - entry.timestamp < 2000 && // Last 2 seconds
+                            entry.state === gameState // Same game state
+                        );
+                        
+                        // If we detect rapid alternation between 0 and non-zero powerups, use stable version
+                        if (recentEntries.length >= 4) {
+                            const hasAlternation = recentEntries.some((entry, index) => {
+                                if (index === 0) return false;
+                                const prev = recentEntries[index - 1];
+                                return (entry.length === 0 && prev.length > 0) || 
+                                       (entry.length > 0 && prev.length === 0);
+                            });
+                            
+                            if (hasAlternation) {
+                                //console.log('🔧 DETECTED POWERUP DATA INCONSISTENCY - Using stable version');
+                                // Use the most recent non-empty powerup data if available
+                                const lastNonEmpty = recentEntries.filter(e => e.length > 0).slice(-1)[0];
+                                if (lastNonEmpty && currentLength === 0) {
+                                    // Keep using stable version instead of empty array
+                                    effectsToUse = stablePowerUpEffects;
+                                    //console.log('🛡️ PRESERVED STABLE POWERUPS:', stablePowerUpEffects.length);
+                                }
+                            }
+                        }
+                        
+                        // Update stable version when we get consistent non-empty data
+                        if (currentLength > 0) {
+                            stablePowerUpEffects = [...effectsToUse];
+                        }
+                    }
+
+                    const newActivePowerUpEffects = Array.isArray(effectsToUse) 
+                        ? effectsToUse.map(p => ({
+                            ...p,
+                            color: p.color || getPowerUpColor(p.type)
+                        }))
+                        : [];
+
+                    activePowerUpEffects = newActivePowerUpEffects;
                 } else {
-                    activePowerUpEffects = [];
+                    console.log('🧊 POWERUP DATA IGNORED (panel frozen during gameplay)');
                 }
                 
-                // Update power-up effect states consistently
+                // NO immediate powerup panel updates - let gameLoop handle everything with timing// Update power-up effect states consistently
                 isShieldActive = state.isShieldActive || false;
                 isDoublePointsActive = state.isDoublePointsActive || false;
                 speedMultiplier = state.speedMultiplier || 1.0;
                 
-                updateUI();
-                requestAnimationFrame(drawGame);
+                updateUI();                // Force initial render when game starts to ensure proper display
+                if (previousGameState === 'Ready' && gameState === 'Playing') {
+                    drawGame();
+                    // Don't draw powerup panel - it will be hidden anyway
+                    lastGameRender = Date.now();
+                    lastGameStateHash = ''; // Reset to ensure next frame gets rendered
+                }
+                
+                // Let the gameLoop handle all rendering with proper throttling
             }
         });
 
@@ -139,23 +237,24 @@ async function setupSignalR() {
 
 // Game drawing functions
 function drawGame() {
-    if (!ctx || snake.length === 0) return;    // Clear entire canvas
+    if (!ctx || snake.length === 0) return;
+
+    // Clear and redraw main game area
     ctx.fillStyle = '#1a0b2e'; // Dark purple background as per PRD
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Draw grid only in the game area (not in the powerup panel area)
-    const gameAreaWidth = BOARD_SIZE.width * CELL_SIZE;
+    // Draw grid in the main game area
     ctx.strokeStyle = '#2a1a3e'; // Slightly lighter purple for grid
     for (let x = 0; x <= BOARD_SIZE.width; x++) {
         ctx.beginPath();
         ctx.moveTo(x * CELL_SIZE, 0);
-        ctx.lineTo(x * CELL_SIZE, BOARD_SIZE.height * CELL_SIZE);
+        ctx.lineTo(x * CELL_SIZE, canvas.height);
         ctx.stroke();
     }
     for (let y = 0; y <= BOARD_SIZE.height; y++) {
         ctx.beginPath();
         ctx.moveTo(0, y * CELL_SIZE);
-        ctx.lineTo(gameAreaWidth, y * CELL_SIZE);
+        ctx.lineTo(canvas.width, y * CELL_SIZE);
         ctx.stroke();
     }
 
@@ -261,64 +360,81 @@ function drawGame() {
             }
         });
     }
-      ctx.restore();    // Draw active power-up effect indicators with countdown timers
+
+    ctx.restore();
+}
+
+// Separate function to draw the powerup panel on its own canvas
+function drawPowerupPanel() {
+    if (!powerupCtx) return;
+    
+     //// NUCLEAR OPTION: Don't draw anything if canvas is hidden
+     //if (powerupCanvas && powerupCanvas.style.display === 'none') {
+     //    console.log('🚫 Powerup panel draw skipped - canvas hidden');
+     //    return;
+     //}
+      // Clear the powerup panel canvas
+    powerupCtx.fillStyle = '#1a0b2e'; // Dark purple background
+    powerupCtx.fillRect(0, 0, powerupCanvas.width, powerupCanvas.height);
+    
+    // Draw active power-up effect indicators WITHOUT countdown timers to eliminate flashing
     if (activePowerUpEffects && activePowerUpEffects.length > 0) {
-        // Position panel below the playing field
-        const gameAreaHeight = BOARD_SIZE.height * CELL_SIZE;
         const panelX = 5;
-        const panelY = gameAreaHeight + 10;
-        const panelWidth = canvas.width - 10;
-        const panelHeight = 50; // Fixed height for panel
+        const panelY = 5;
+        const panelWidth = powerupCanvas.width - 10;
+        const panelHeight = powerupCanvas.height - 10;
         
-        // Draw semi-transparent panel
-        ctx.fillStyle = 'rgba(26, 11, 46, 0.9)';
-        ctx.fillRect(panelX, panelY, panelWidth, panelHeight);
+        // Draw semi-transparent panel background
+        powerupCtx.fillStyle = 'rgba(26, 11, 46, 0.9)';
+        powerupCtx.fillRect(panelX, panelY, panelWidth, panelHeight);
         
-        // Draw each active effect with countdown timer
-        ctx.font = 'bold 16px Arial';
-        ctx.textBaseline = 'middle';
+        // Draw each active effect WITHOUT timers
+        powerupCtx.font = 'bold 16px Arial';
+        powerupCtx.textBaseline = 'middle';
         
         // Calculate spacing between effects based on panel width and number of effects
         const effectWidth = Math.min(280, panelWidth / activePowerUpEffects.length);
-        
-        activePowerUpEffects.forEach((effect, index) => {
+          activePowerUpEffects.forEach((effect, index) => {
             const x = panelX + (effectWidth * index) + 15;
-            const y = panelY + 25;
+            const y = panelY + panelHeight / 2;
             
             // Draw icon with glow
-            ctx.save();
-            ctx.shadowBlur = 10;
-            ctx.shadowColor = effect.color;
-            ctx.fillStyle = effect.color;
-            ctx.fillText(getPowerUpIcon(effect.type), x, y);
+            powerupCtx.save();
+            powerupCtx.shadowBlur = 10;
+            powerupCtx.shadowColor = effect.color;
+            powerupCtx.fillStyle = effect.color;
+            powerupCtx.fillText(getPowerUpIcon(effect.type), x, y);
             
             // Draw effect name
-            ctx.shadowBlur = 0;
-            ctx.fillStyle = '#ffffff';
-            ctx.textAlign = 'left';
-            ctx.fillText(getEffectName(effect.type), x + 30, y);
+            powerupCtx.shadowBlur = 0;
+            powerupCtx.fillStyle = '#ffffff';
+            powerupCtx.textAlign = 'left';
+            powerupCtx.fillText(getEffectName(effect.type), x + 30, y);
             
-            // Background bar
+            // Draw countdown timer and progress bar
+            const remainingPercent = effect.remainingEffectTimePercentage || 0;
+            const effectDurationSeconds = effect.effectDurationInSeconds || getEffectDuration(effect.type);
+            const remainingSeconds = Math.ceil(remainingPercent * effectDurationSeconds);
+            
+            // Background progress bar
             const barWidth = 60;
             const barHeight = 6;
             const barX = x + effectWidth - 100;
             const barY = y - barHeight / 2;
             
-            ctx.fillStyle = '#2a1a3e';
-            ctx.fillRect(barX, barY, barWidth, barHeight);
+            powerupCtx.fillStyle = '#2a1a3e';
+            powerupCtx.fillRect(barX, barY, barWidth, barHeight);
             
-            // Progress bar
-            const remainingPercent = effect.remainingEffectTimePercentage || 0;
-            ctx.fillStyle = effect.color;
-            ctx.fillRect(barX, barY, barWidth * remainingPercent, barHeight);
+            // Active progress bar
+            powerupCtx.fillStyle = effect.color;
+            powerupCtx.fillRect(barX, barY, barWidth * remainingPercent, barHeight);
             
-            // Draw countdown timer
-            const remainingSeconds = Math.ceil(remainingPercent * effect.effectDurationInSeconds);
-            ctx.fillStyle = '#ffff00';
-            ctx.textAlign = 'left';
-            ctx.fillText(`${remainingSeconds}s`, barX + barWidth + 5, y);
+            // Draw countdown timer text
+            powerupCtx.fillStyle = '#ffff00';
+            powerupCtx.textAlign = 'left';
+            powerupCtx.fillText(`${remainingSeconds}s`, barX + barWidth + 5, y);
             
-            ctx.restore();
+            powerupCtx.restore();
         });
     }
 }
@@ -372,6 +488,22 @@ function getEffectName(type) {
     }
 }
 
+// Utility function to get powerup effect duration in seconds
+function getEffectDuration(type) {
+    switch (type) {
+        case 'SpeedBoost':
+            return 15;   // 15 seconds
+        case 'Shield':
+            return 10;   // 10 seconds
+        case 'DoublePoints':
+            return 20;   // 20 seconds
+        case 'Shrink':
+            return 0;    // Instant effect
+        default:
+            return 10;   // Default fallback
+    }
+}
+
 // UI update function
 function updateUI() {
     scoreElement.textContent = score;
@@ -383,13 +515,18 @@ function updateUI() {
         startScreen.classList.remove('hide');
         gameOverScreen.classList.add('hide');
         canvas.classList.add('hide');
-        nameInputModal.classList.add('hide');        // Reset game session flags
+        powerupCanvas.classList.add('hide');
+        nameInputModal.classList.add('hide');
+        
+        // Reset game session flags
         scoreSubmitted = false; // Reset score submission flag for new game
         gameStartTime = 0; // Reset game start time
         gameWasPlayed = false; // Reset game played flag
     } else if (gameState === 'GameOver') {
         startScreen.classList.add('hide');
-        gameOverScreen.classList.remove('hide');        canvas.classList.remove('hide');
+        gameOverScreen.classList.remove('hide');
+        canvas.classList.remove('hide');
+        powerupCanvas.classList.remove('hide');
         nameInputModal.classList.add('hide');
 
         // Only attempt to submit score once per game session AND only if a real game was played
@@ -402,11 +539,14 @@ function updateUI() {
                 console.log('📝 Submitting anonymous score for completed game');
                 submitScore('Anonymous');
             }
-        }
-    } else {
+        }    } else {
         startScreen.classList.add('hide');
         gameOverScreen.classList.add('hide');
         canvas.classList.remove('hide');
+        // Only show powerup canvas if not frozen
+        if (!powerupPanelFrozen) {
+            powerupCanvas.classList.remove('hide');
+        }
         nameInputModal.classList.add('hide');
     }
 }// Function to check if current score qualifies for high score entry
@@ -856,7 +996,39 @@ playerNameInput.addEventListener('keypress', (e) => {
 // Animation loop using RAF for smooth rendering
 function gameLoop() {
     if (gameState !== 'Ready') {
-        drawGame();
+        const now = Date.now();
+          // Only include visually-relevant state in the hash
+        const visualState = {
+            snakePositions: snake.map(s => ({ x: s.x, y: s.y })), // Only position matters for rendering
+            food: food,
+            powerUps: powerUps.map(p => ({ // Only visual aspects of powerups
+                position: p.position,
+                type: p.type,
+                remainingExpirationTimePercentage: Math.floor(p.remainingExpirationTimePercentage * 10) / 10
+            })),
+            gameState: gameState,
+            effectsActive: { // Only active effects that change visuals
+                shield: isShieldActive,
+                doublePoints: isDoublePointsActive
+            }
+        };
+        const currentGameStateHash = JSON.stringify(visualState);
+        // Throttle main game rendering to 60 FPS max AND only when visual state changes
+        if ((now - lastGameRender >= 16) && (currentGameStateHash !== lastGameStateHash)) { // ~60 FPS + change detection
+            drawGame();
+            lastGameRender = now;
+            lastGameStateHash = currentGameStateHash;
+        }
+        
+        //// Fallback: Force redraw every 2 seconds if we have powerUps but haven't drawn recently
+        //// This ensures powerUps don't get "stuck" due to change detection issues
+        //else if (powerUps && powerUps.length > 0 && (now - lastGameRender) > 2000) {
+        //    console.log('Fallback redraw triggered for powerUps');
+        //    drawGame();
+        //    lastGameRender = now;
+        //    lastGameStateHash = currentGameStateHash;
+        //}        // COMPLETELY REMOVED: No powerup panel updates in game loop
+        // The powerup panel will be updated by a separate interval timer only
     }
     requestAnimationFrame(gameLoop);
 }
@@ -868,6 +1040,21 @@ async function init() {
     updateUI();
     gameLoop();
     fetchLeaderboard(); // Load initial leaderboard
+      // COMPLETELY SEPARATE POWERUP PANEL UPDATE SYSTEM
+    // This runs on its own interval, completely disconnected from all game events
+    setInterval(() => {
+        // Only update when panel is not frozen and game is not in active play
+        if (gameState !== 'Ready' && !powerupPanelFrozen) {
+            const currentEffectTypes = activePowerUpEffects.map(e => e.type).sort();
+            const lastEffectTypes = lastActivePowerUpEffects.map(e => e.type).sort();
+            const effectTypesChanged = JSON.stringify(currentEffectTypes) !== JSON.stringify(lastEffectTypes);
+            
+                drawPowerupPanel();
+                lastActivePowerUpEffects = [...activePowerUpEffects];
+        } else if (powerupPanelFrozen) {
+            console.log('⏰ INTERVAL UPDATE BLOCKED - Panel frozen during gameplay');
+        }
+    }, 250);
 }
 
 // Handle roundRect for older browsers

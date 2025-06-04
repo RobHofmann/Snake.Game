@@ -29,6 +29,15 @@ canvas {
     border: 2px solid #4deeea;
     border-radius: 8px;
     box-shadow: 0 0 20px rgba(77, 238, 234, 0.3);
+    display: block;
+    margin: 0 auto;
+}
+
+.powerup-panel {
+    margin-top: 5px;
+    border-top: none;
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
 }
 
 .hide {
