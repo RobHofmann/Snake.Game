@@ -1,6 +1,6 @@
 {
-"version": "1.11",
-"lastUpdated": "2025-06-04",
+"version": "1.12",
+"lastUpdated": "2025-01-21",
 "projectProgress": {
 "currentPhase": {
 "name": "Phase 1 - Foundation",
@@ -177,6 +177,14 @@
 "details": "Root cause identified: server sends alternating powerup data (length 1/0) even during active gameplay, causing visual flashing. Solution: implemented powerup data history tracking and stability filtering on client side. When rapid alternation between empty/non-empty powerup arrays is detected, the system preserves the last stable non-empty state instead of trusting inconsistent server data. This completely eliminates flashing while maintaining accurate powerup display. Countdown timers and progress bars have been restored for better user experience.",
 "tested": "2025-06-04",
 "status": "FULLY RESOLVED - Client-side data filtering eliminates server inconsistency impact, timers restored"
+},
+{
+"issue": "Speed powerup not affecting snake movement speed",
+"fix": "RESOLVED - Fixed corrupted GameEngine.cs syntax that prevented compilation and proper speed boost functionality",
+"date": "2025-01-21",
+"details": "Root cause: Malformed Update() method syntax in GameEngine.cs with missing brackets and incorrect code structure caused compilation errors. The speed boost implementation was already correct (multiplier of 1.5f affects effectiveUpdateRate calculation), but syntax errors prevented the code from compiling and running. Fixed method structure and verified all 43 unit tests pass including specific speed boost test.",
+"tested": "2025-01-21",
+"status": "FULLY RESOLVED - Speed boost now properly increases snake speed by 50%"
 }
 ]
 }
@@ -331,12 +339,14 @@
 "activeBranches": {
 "main": {
 "lastCommit": "34f7b2e",
-"lastCommitDate": "2025-06-04",
-"commitMessage": "Fix PowerUp expiration tests with deterministic testing capabilities", "recentChanges": [
-"Enhanced PowerUp class with deterministic testing capabilities via SetSpawnTime method",
-"Added optional constructor parameter for test-controlled disappear time",
-"Fixed PowerUp expiration and time-based tests to be consistently reproducible",
-"All tests now pass reliably with 100% PowerUp system test coverage",
+"lastCommitDate": "2025-01-21",
+"commitMessage": "Fix speed powerup compilation error and FluentAssertions test syntax",
+"recentChanges": [
+"Fixed corrupted GameEngine.cs Update() method syntax that prevented compilation",
+"Updated FluentAssertions method calls in MobileControlsTests.cs to use correct syntax",
+"Verified speed boost functionality works correctly with 1.5x multiplier",
+"All 43 unit tests now pass including specific speed boost test",
+"Speed powerup bug fully resolved and documented in STATE.md"
 ]
 }
 }

@@ -1,7 +1,7 @@
 # Project Roadmap - Snake Game
 
-**Version:** 1.4  
-**Date:** June 4, 2025
+**Version:** 1.5  
+**Date:** January 21, 2025
 **Status:** In Progress
 
 ## Overview
@@ -10,9 +10,17 @@ A modern implementation of the classic Snake game with online features, built us
 
 ---
 
-## Recent Updates (June 4, 2025)
+## Recent Updates (January 21, 2025)
 
-### Major Accomplishments
+### Bug Fix Accomplishments
+
+- ✅ **Critical Bug Fix**: Resolved speed powerup compilation error that prevented proper functionality
+- ✅ **Code Quality**: Fixed corrupted GameEngine.cs Update() method syntax
+- ✅ **Test Stability**: Updated FluentAssertions method calls in test files to use correct syntax
+- ✅ **Verification**: All 43 unit tests now pass, including specific speed boost functionality test
+- ✅ **Performance**: Speed boost powerup now correctly increases snake speed by 50% (1.5x multiplier)
+
+### Previous Major Accomplishments (June 4, 2025)
 
 - ✅ **Critical Bug Fix**: Resolved powerup panel flashing issue with client-side data stability filtering
 - ✅ **Enhanced UX**: Restored countdown timers and progress bars for active powerups

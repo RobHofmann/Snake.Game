@@ -61,21 +61,17 @@ public class MobileControlsTests
     public void SwipeThreshold_MinimumDistance_ShouldBeReasonable()
     {
         // Arrange
-        const int SwipeThreshold = 30; // pixels
-
-        // Act & Assert
-        SwipeThreshold.Should().BeGreaterOrEqualTo(20, "because minimum touch distance should be reasonable for finger accuracy");
-        SwipeThreshold.Should().BeLessOrEqualTo(50, "because threshold shouldn't be too large for quick swipes");
+        const int SwipeThreshold = 30; // pixels        // Act & Assert
+        SwipeThreshold.Should().BeGreaterThanOrEqualTo(20, "because minimum touch distance should be reasonable for finger accuracy");
+        SwipeThreshold.Should().BeLessThanOrEqualTo(50, "because threshold shouldn't be too large for quick swipes");
     }
 
     [Fact]
     public void TouchButtonSize_ShouldMeetAccessibilityGuidelines()
     {
         // Arrange - iOS and Android recommend minimum 44px touch targets
-        const int MinimumTouchTargetSize = 44; // pixels
-
-        // Act & Assert
-        MinimumTouchTargetSize.Should().BeGreaterOrEqualTo(44, "because this meets iOS and Android accessibility guidelines");
+        const int MinimumTouchTargetSize = 44; // pixels        // Act & Assert
+        MinimumTouchTargetSize.Should().BeGreaterThanOrEqualTo(44, "because this meets iOS and Android accessibility guidelines");
     }
 
     [Theory]

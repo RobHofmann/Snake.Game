@@ -77,9 +77,7 @@ public class GameEngine : IGameEngine
         SpawnPowerUps();
 
         State = GameState.Playing;
-    }
-
-    /// <summary>
+    }    /// <summary>
     /// Updates the game state based on the current direction and time delta.
     /// </summary>
     /// <param name="deltaTime">The time elapsed since the last update in milliseconds.</param>
@@ -89,17 +87,24 @@ public class GameEngine : IGameEngine
         if (State != GameState.Playing)
             return false;
 
-        LastFrameTime = deltaTime;        // Update game logic at fixed time steps
+        LastFrameTime = deltaTime;
+        
+        // Update game logic at fixed time steps with speed multiplier applied
         _logicAccumulator += deltaTime;
-        while (_logicAccumulator >= _logicUpdateRate)
+        
+        // Apply speed multiplier to the logic update rate (lower rate = faster movement)
+        var effectiveUpdateRate = _logicUpdateRate / _speedMultiplier;
+        
+        while (_logicAccumulator >= effectiveUpdateRate)
         {
             if (!UpdateGameLogic())
                 return false;
-            _logicAccumulator -= _logicUpdateRate;
+            _logicAccumulator -= effectiveUpdateRate;
         }
 
         return true;
     }
+
     private bool UpdateGameLogic()
     {
         var currentTickRate = _logicUpdateRate * (1f - (_score * 0.01f)).Clamp(0.5f, 1f);        // Process next queued direction if available
