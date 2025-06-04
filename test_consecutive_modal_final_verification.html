@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>🎯 Final Consecutive Modal Verification</title>
+    <style>
+        body {
+            background-color: #1a0b2e;
+            color: #4DEE5A;
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        
+        .test-section {
+            background: #2a2a2a;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            border: 2px solid #4DEE5A;
+        }
+        
+        .status {
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+        
+        .status.info { background: rgba(77, 238, 234, 0.2); color: #4DEEEA; }
+        .status.success { background: rgba(77, 238, 90, 0.2); color: #4DEE5A; }
+        .status.error { background: rgba(255, 49, 49, 0.2); color: #ff3131; }
+        .status.warning { background: rgba(255, 170, 0, 0.2); color: #ffaa00; }
+        
+        .test-button {
+            background: #4DEE5A;
+            color: #1a0b2e;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        
+        .test-button:hover {
+            background: #39FF14;
+        }
+        
+        .test-button:disabled {
+            background: #666;
+            color: #999;
+            cursor: not-allowed;
+        }
+        
+        .game-frame {
+            width: 100%;
+            height: 700px;
+            border: 2px solid #4DEE5A;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        
+        .console-output {
+            background: #000;
+            color: #0f0;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+            margin: 20px 0;
+            border: 1px solid #333;
+        }
+        
+        .step-indicator {
+            display: inline-block;
+            background: #4DEE5A;
+            color: #1a0b2e;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        
+        .step-complete {
+            background: #39FF14;
+        }
+        
+        .step-error {
+            background: #ff3131;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎯 Final Consecutive Modal Verification Test</h1>
+    
+    <div class="test-section">
+        <h2>🔧 POWERUP CANVAS CONSISTENCY FIX</h2>
+        <p><strong>ISSUE IDENTIFIED:</strong> Powerup canvas visibility logic was inconsistent between game states:</p>
+        <ul>
+            <li>❌ <strong>GameOver state:</strong> <code>powerupCanvas.classList.remove('hide')</code> (always shows)</li>
+            <li>✅ <strong>Playing state:</strong> <code>if (!powerupPanelFrozen) { powerupCanvas.classList.remove('hide'); }</code> (conditional)</li>
+        </ul>
+        <p><strong>FIX APPLIED:</strong> Made GameOver state use the same conditional logic as Playing state for consistency.</p>
+    </div>
+    
+    <div class="test-section">
+        <h2>🎮 CONSECUTIVE MODAL TEST</h2>
+        <p>This test verifies that the high score modal appears correctly on consecutive games after the powerup canvas consistency fix.</p>
+        
+        <div id="status" class="status info">Ready to start test sequence...</div>
+        
+        <div style="margin: 20px 0;">
+            <button class="test-button" onclick="runConsecutiveTest()" id="start-test-btn">🚀 Run 3-Game Consecutive Test</button>
+            <button class="test-button" onclick="clearConsole()">🧹 Clear Console</button>
+            <button class="test-button" onclick="resetTest()" id="reset-btn" disabled>🔄 Reset Test</button>
+        </div>
+        
+        <div id="test-progress" style="margin: 20px 0; font-weight: bold;">
+            <span class="step-indicator" id="step1">1</span>Loading game...
+            <span class="step-indicator" id="step2">2</span>First game cycle...
+            <span class="step-indicator" id="step3">3</span>Second game cycle...
+            <span class="step-indicator" id="step4">4</span>Third game cycle...
+            <span class="step-indicator" id="step5">5</span>Analysis complete
+        </div>
+    </div>
+    
+    <div class="test-section">
+        <h2>🎮 GAME WINDOW</h2>
+        <iframe id="game-frame" src="http://localhost:5263" class="game-frame"></iframe>
+    </div>
+    
+    <div class="test-section">
+        <h2>📝 TEST CONSOLE</h2>
+        <div class="console-output" id="console-output">
+            Test console ready. Click "Run 3-Game Consecutive Test" to begin verification...
+        </div>
+    </div>
+
+    <script>
+        let gameWindow = null;
+        let testStep = 0;
+        let testResults = [];
+        let isTestRunning = false;
+        
+        function updateStatus(message, type = 'info') {
+            const status = document.getElementById('status');
+            status.textContent = message;
+            status.className = `status ${type}`;
+        }
+        
+        function log(message, type = 'info') {
+            const output = document.getElementById('console-output');
+            const timestamp = new Date().toLocaleTimeString();
+            const color = type === 'error' ? '#ff3131' : type === 'success' ? '#4DEE5A' : type === 'warning' ? '#ffaa00' : '#0f0';
+            
+            output.innerHTML += `<div style="color: ${color}">[${timestamp}] ${message}</div>`;
+            output.scrollTop = output.scrollHeight;
+        }
+        
+        function clearConsole() {
+            document.getElementById('console-output').innerHTML = '';
+            log('Console cleared. Ready for new test...', 'info');
+        }
+        
+        function updateStepIndicator(stepNum, status = 'active') {
+            const step = document.getElementById(`step${stepNum}`);
+            if (step) {
+                step.className = `step-indicator ${status === 'complete' ? 'step-complete' : status === 'error' ? 'step-error' : ''}`;
+            }
+        }
+        
+        function setGameWindowReference() {
+            const iframe = document.getElementById('game-frame');
+            gameWindow = iframe.contentWindow;
+            
+            // Wait for game to fully load
+            return new Promise((resolve) => {
+                const checkGameReady = () => {
+                    if (gameWindow && gameWindow.gameState !== undefined) {
+                        log('✅ Game window reference established', 'success');
+                        resolve();
+                    } else {
+                        setTimeout(checkGameReady, 500);
+                    }
+                };
+                checkGameReady();
+            });
+        }
+        
+        async function simulateGameCycle(gameNumber) {
+            log(`\n🎮 === GAME ${gameNumber} CYCLE START ===`, 'info');
+            
+            // Step 1: Reset to Ready state
+            gameWindow.gameState = 'Ready';
+            gameWindow.updateUI();
+            log(`${gameNumber}.1 Reset to Ready state`);
+            
+            // Step 2: Start game simulation
+            gameWindow.gameState = 'Playing';
+            gameWindow.score = 150 + (gameNumber * 50); // Different scores for each game
+            gameWindow.gameStartTime = Date.now() - 10000; // 10 seconds ago
+            gameWindow.gameWasPlayed = true;
+            gameWindow.scoreSubmitted = false;
+            gameWindow.pageLoadTime = Date.now() - 60000; // 1 minute ago
+            log(`${gameNumber}.2 Set up playing state with score ${gameWindow.score}`);
+            
+            // Step 3: End game and trigger modal check
+            gameWindow.gameState = 'GameOver';
+            gameWindow.updateUI();
+            log(`${gameNumber}.3 Game ended, called updateUI()`);
+            
+            // Step 4: Check if modal appeared
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            const modal = gameWindow.document.getElementById('nameInputModal');
+            const isVisible = modal && !modal.classList.contains('hide');
+            const powerupCanvas = gameWindow.document.getElementById('powerupCanvas');
+            const powerupVisible = powerupCanvas && !powerupCanvas.classList.contains('hide');
+            
+            log(`${gameNumber}.4 RESULTS:`);
+            log(`   📊 Modal visible: ${isVisible ? '✅ YES' : '❌ NO'}`, isVisible ? 'success' : 'error');
+            log(`   🎨 Powerup canvas visible: ${powerupVisible ? '✅ YES' : '❌ NO'}`, 'info');
+            log(`   🚩 scoreSubmitted: ${gameWindow.scoreSubmitted}`);
+            log(`   🚩 gameWasPlayed: ${gameWindow.gameWasPlayed}`);
+            log(`   🚩 gameStartTime: ${gameWindow.gameStartTime}`);
+            log(`   🚩 powerupPanelFrozen: ${gameWindow.powerupPanelFrozen}`);
+            
+            const result = {
+                gameNumber,
+                modalVisible: isVisible,
+                powerupVisible: powerupVisible,
+                score: gameWindow.score,
+                flags: {
+                    scoreSubmitted: gameWindow.scoreSubmitted,
+                    gameWasPlayed: gameWindow.gameWasPlayed,
+                    gameStartTime: gameWindow.gameStartTime,
+                    powerupPanelFrozen: gameWindow.powerupPanelFrozen
+                }
+            };
+            
+            testResults.push(result);
+            
+            // Simulate closing modal for next test
+            if (isVisible && modal) {
+                modal.classList.add('hide');
+                gameWindow.scoreSubmitted = true; // Mark as submitted
+                log(`${gameNumber}.5 Simulated modal close for next test`);
+            }
+            
+            log(`🎮 === GAME ${gameNumber} CYCLE COMPLETE ===\n`, 'info');
+            return result;
+        }
+        
+        async function runConsecutiveTest() {
+            if (isTestRunning) return;
+            
+            isTestRunning = true;
+            testStep = 0;
+            testResults = [];
+            
+            document.getElementById('start-test-btn').disabled = true;
+            document.getElementById('reset-btn').disabled = false;
+            
+            try {
+                // Step 1: Initialize
+                updateStepIndicator(1, 'active');
+                updateStatus('Initializing consecutive modal test...', 'info');
+                log('🚀 Starting 3-game consecutive modal test...', 'info');
+                
+                await setGameWindowReference();
+                updateStepIndicator(1, 'complete');
+                
+                // Step 2-4: Run game cycles
+                for (let gameNum = 1; gameNum <= 3; gameNum++) {
+                    updateStepIndicator(gameNum + 1, 'active');
+                    updateStatus(`Running game ${gameNum} of 3...`, 'info');
+                    
+                    const result = await simulateGameCycle(gameNum);
+                    
+                    if (result.modalVisible) {
+                        updateStepIndicator(gameNum + 1, 'complete');
+                    } else {
+                        updateStepIndicator(gameNum + 1, 'error');
+                    }
+                    
+                    // Brief pause between games
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                }
+                
+                // Step 5: Analysis
+                updateStepIndicator(5, 'active');
+                updateStatus('Analyzing test results...', 'info');
+                await analyzeResults();
+                updateStepIndicator(5, 'complete');
+                
+            } catch (error) {
+                log(`❌ Test error: ${error.message}`, 'error');
+                updateStatus(`Test failed: ${error.message}`, 'error');
+            } finally {
+                isTestRunning = false;
+            }
+        }
+        
+        async function analyzeResults() {
+            log('\n📊 === FINAL ANALYSIS ===', 'info');
+            
+            const modalSuccesses = testResults.filter(r => r.modalVisible).length;
+            const modalFailures = testResults.filter(r => !r.modalVisible).length;
+            
+            log(`🎯 Modal Appearance Results:`, 'info');
+            log(`   ✅ Successful modals: ${modalSuccesses}/3`, modalSuccesses === 3 ? 'success' : 'warning');
+            log(`   ❌ Failed modals: ${modalFailures}/3`, modalFailures === 0 ? 'success' : 'error');
+            
+            log(`🎨 Powerup Canvas Consistency:`, 'info');
+            const powerupStates = testResults.map(r => r.powerupVisible);
+            const isConsistent = powerupStates.every(state => state === powerupStates[0]);
+            log(`   Powerup visibility consistent: ${isConsistent ? '✅ YES' : '❌ NO'}`, isConsistent ? 'success' : 'error');
+            
+            // Overall result
+            if (modalSuccesses === 3 && isConsistent) {
+                log('\n🎉 CONSECUTIVE MODAL TEST: ✅ PASSED', 'success');
+                log('✅ All modals appeared correctly on consecutive games!', 'success');
+                log('✅ Powerup canvas visibility is now consistent!', 'success');
+                updateStatus('✅ CONSECUTIVE MODAL TEST PASSED! Fix is working.', 'success');
+            } else if (modalSuccesses > 0) {
+                log('\n⚠️ CONSECUTIVE MODAL TEST: 🟡 PARTIAL SUCCESS', 'warning');
+                log(`⚠️ ${modalSuccesses}/3 modals appeared correctly`, 'warning');
+                updateStatus(`⚠️ Partial success: ${modalSuccesses}/3 modals worked`, 'warning');
+            } else {
+                log('\n❌ CONSECUTIVE MODAL TEST: ❌ FAILED', 'error');
+                log('❌ No modals appeared in consecutive games', 'error');
+                updateStatus('❌ CONSECUTIVE MODAL TEST FAILED', 'error');
+            }
+            
+            log('\n📋 Detailed Results:', 'info');
+            testResults.forEach((result, index) => {
+                log(`Game ${result.gameNumber}: Modal=${result.modalVisible ? '✅' : '❌'}, Powerup=${result.powerupVisible ? '✅' : '❌'}, Score=${result.score}`, 'info');
+            });
+        }
+        
+        function resetTest() {
+            testStep = 0;
+            testResults = [];
+            isTestRunning = false;
+            
+            document.getElementById('start-test-btn').disabled = false;
+            document.getElementById('reset-btn').disabled = true;
+            
+            // Reset step indicators
+            for (let i = 1; i <= 5; i++) {
+                updateStepIndicator(i, '');
+            }
+            
+            updateStatus('Test reset. Ready to run new test.', 'info');
+            log('🔄 Test reset completed', 'info');
+        }
+        
+        // Auto-initialize when page loads
+        window.addEventListener('load', () => {
+            log('🎯 Final Consecutive Modal Verification Test Ready', 'success');
+            log('This test verifies the powerup canvas consistency fix for consecutive modal issues.', 'info');
+            log('Click "Run 3-Game Consecutive Test" to begin...', 'info');
+        });
+        
+    </script>
+</body>
+</html>

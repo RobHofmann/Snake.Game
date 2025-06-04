@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Quick Modal Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #1a0b2e; color: #4deeea; padding: 20px; }
+        .test-container { max-width: 800px; margin: 0 auto; }
+        .test-button { background: #4deeea; color: #1a0b2e; border: none; padding: 15px 30px; font-size: 16px; border-radius: 5px; cursor: pointer; margin: 10px; }
+        .test-button:hover { background: #39ff14; }
+        .status { margin: 20px 0; padding: 10px; border: 1px solid #4deeea; border-radius: 5px; }
+        .success { border-color: #39ff14; color: #39ff14; }
+        .error { border-color: #ff3131; color: #ff3131; }
+        iframe { width: 100%; height: 600px; border: 1px solid #4deeea; margin: 20px 0; }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🎮 Snake Game Modal Quick Test</h1>
+        
+        <div id="status" class="status">Ready to test...</div>
+        
+        <button class="test-button" onclick="loadGame()">1. Load Game</button>
+        <button class="test-button" onclick="forceShowModal()" disabled id="force-modal-btn">2. Force Show Modal</button>
+        <button class="test-button" onclick="playNormalGame()" disabled id="play-game-btn">3. Play Normal Game</button>
+        
+        <iframe id="game-frame" style="display: none;"></iframe>
+        
+        <div style="margin-top: 20px;">
+            <h3>Instructions:</h3>
+            <ol>
+                <li><strong>Load Game:</strong> Click to load the Snake game</li>
+                <li><strong>Force Show Modal:</strong> Directly test if modal can appear</li>
+                <li><strong>Play Normal Game:</strong> Test through normal gameplay</li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        let gameWindow = null;
+        
+        function updateStatus(message, type = 'info') {
+            const status = document.getElementById('status');
+            status.textContent = message;
+            status.className = 'status ' + type;
+        }
+        
+        function loadGame() {
+            updateStatus('Loading Snake game...', 'info');
+            
+            const iframe = document.getElementById('game-frame');
+            iframe.style.display = 'block';
+            iframe.src = 'http://localhost:5080';
+            
+            iframe.onload = () => {
+                gameWindow = iframe.contentWindow;
+                updateStatus('✅ Game loaded! You can now test the modal.', 'success');
+                document.getElementById('force-modal-btn').disabled = false;
+                document.getElementById('play-game-btn').disabled = false;
+            };
+            
+            iframe.onerror = () => {
+                updateStatus('❌ Failed to load game. Make sure server is running.', 'error');
+            };
+        }
+        
+        function forceShowModal() {
+            if (!gameWindow) {
+                updateStatus('❌ Game not loaded yet!', 'error');
+                return;
+            }
+            
+            try {
+                updateStatus('🔧 Setting up test conditions...', 'info');
+                
+                // Set up the conditions needed for modal
+                gameWindow.score = 100;
+                gameWindow.gameWasPlayed = true;
+                gameWindow.gameStartTime = Date.now() - 10000; // 10 seconds ago
+                gameWindow.scoreSubmitted = false;
+                gameWindow.pageLoadTime = Date.now() - 20000; // 20 seconds ago
+                
+                // Call the modal function directly
+                if (typeof gameWindow.showNameInputModal === 'function') {
+                    updateStatus('🚀 Calling showNameInputModal()...', 'info');
+                    gameWindow.showNameInputModal();
+                    
+                    // Check if modal appeared
+                    setTimeout(() => {
+                        const modal = gameWindow.document.getElementById('nameInputModal');
+                        if (modal && !modal.classList.contains('hide')) {
+                            updateStatus('✅ SUCCESS! Modal is visible. Try typing in the name field.', 'success');
+                        } else {
+                            updateStatus('❌ Modal function called but modal not visible. Check browser console for errors.', 'error');
+                        }
+                    }, 500);
+                } else {
+                    updateStatus('❌ showNameInputModal function not found!', 'error');
+                }
+                
+            } catch (error) {
+                updateStatus('❌ Error: ' + error.message, 'error');
+            }
+        }
+        
+        function playNormalGame() {
+            if (!gameWindow) {
+                updateStatus('❌ Game not loaded yet!', 'error');
+                return;
+            }
+            
+            updateStatus('🎮 Game loaded. Press SPACE to start, play until game over. Modal should appear for any score > 0.', 'info');
+        }
+    </script>
+</body>
+</html>

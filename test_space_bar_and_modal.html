@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎮 Space Bar & Modal Test</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            margin: 0;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            height: 100vh;
+        }
+        
+        .test-panel {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 20px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            overflow-y: auto;
+        }
+        
+        .game-area {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .console-output {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            padding: 15px;
+            height: 300px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            border: 1px solid rgba(77, 238, 234, 0.3);
+            margin-top: 10px;
+        }
+        
+        .status {
+            padding: 10px;
+            border-radius: 6px;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+        
+        .status.success { background: rgba(46, 204, 113, 0.2); border-left: 4px solid #2ecc71; }
+        .status.error { background: rgba(231, 76, 60, 0.2); border-left: 4px solid #e74c3c; }
+        .status.warning { background: rgba(243, 156, 18, 0.2); border-left: 4px solid #f39c12; }
+        .status.info { background: rgba(52, 152, 219, 0.2); border-left: 4px solid #3498db; }
+        
+        .test-button {
+            background: linear-gradient(45deg, #4deed4, #35a8c7);
+            border: none;
+            color: white;
+            padding: 12px 24px;
+            margin: 5px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        
+        .test-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(77, 238, 234, 0.3);
+        }
+        
+        .test-button:active {
+            transform: translateY(0);
+        }
+        
+        iframe {
+            border: 2px solid #4deed4;
+            border-radius: 8px;
+            background: white;
+            flex: 1;
+            min-height: 400px;
+        }
+        
+        h1, h2, h3 {
+            margin-top: 0;
+            color: #4deed4;
+        }
+        
+        .instruction {
+            background: rgba(77, 238, 234, 0.1);
+            border: 1px solid rgba(77, 238, 234, 0.3);
+            border-radius: 6px;
+            padding: 15px;
+            margin: 10px 0;
+        }
+        
+        .key-indicator {
+            display: inline-block;
+            background: rgba(77, 238, 234, 0.3);
+            border: 1px solid #4deed4;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-weight: bold;
+            margin: 0 2px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Game Area -->
+        <div class="test-panel game-area">
+            <h2>🎮 Snake Game</h2>
+            <div class="instruction">
+                <strong>Test Instructions:</strong>
+                <br>1. Press <span class="key-indicator">SPACE</span> to start the game
+                <br>2. Use arrow keys or WASD to move
+                <br>3. Let the snake hit a wall to end the game
+                <br>4. Check if the high score modal appears
+            </div>
+            
+            <iframe id="gameFrame" 
+                    src="src/Snake.Web/wwwroot/index.html" 
+                    width="100%" 
+                    height="100%">
+            </iframe>
+        </div>
+        
+        <!-- Test Controls -->
+        <div class="test-panel">
+            <h2>🧪 Test Controls</h2>
+            
+            <div class="instruction">
+                <strong>Automated Tests:</strong> Use these buttons to test specific functionality
+            </div>
+            
+            <button class="test-button" onclick="testSpaceBarFunctionality()">Test Space Bar</button>
+            <button class="test-button" onclick="testModalDirectly()">Test Modal Directly</button>
+            <button class="test-button" onclick="testConsecutiveGames()">Test Consecutive Games</button>
+            <button class="test-button" onclick="checkGameState()">Check Game State</button>
+            <button class="test-button" onclick="clearConsole()">Clear Console</button>
+            
+            <div id="testStatus" class="status info">
+                <strong>Status:</strong> Ready to test
+            </div>
+            
+            <h3>📝 Console Output</h3>
+            <div id="consoleOutput" class="console-output">
+                Console output will appear here...
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let gameWindow = null;
+        let consoleOutput = document.getElementById('consoleOutput');
+        let testStatus = document.getElementById('testStatus');
+        
+        // Initialize game frame reference
+        document.getElementById('gameFrame').onload = function() {
+            gameWindow = this.contentWindow;
+            log('✅ Game frame loaded successfully');
+            updateStatus('Game loaded - ready for testing', 'success');
+        };
+        
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const typeColors = {
+                'success': '#2ecc71',
+                'error': '#e74c3c', 
+                'warning': '#f39c12',
+                'info': '#3498db'
+            };
+            
+            consoleOutput.innerHTML += 
+                `<div style="color: ${typeColors[type] || '#ffffff'}; margin: 2px 0;">
+                    <span style="opacity: 0.6;">[${timestamp}]</span> ${message}
+                </div>`;
+            consoleOutput.scrollTop = consoleOutput.scrollHeight;
+        }
+        
+        function updateStatus(message, type = 'info') {
+            testStatus.className = `status ${type}`;
+            testStatus.innerHTML = `<strong>Status:</strong> ${message}`;
+        }
+        
+        function clearConsole() {
+            consoleOutput.innerHTML = '';
+            log('Console cleared');
+        }
+        
+        function testSpaceBarFunctionality() {
+            if (!gameWindow) {
+                updateStatus('Game not loaded yet!', 'error');
+                return;
+            }
+            
+            log('🎯 Testing Space Bar Functionality...', 'info');
+            updateStatus('Testing space bar...', 'info');
+            
+            try {
+                // Check current game state
+                const currentState = gameWindow.gameState;
+                log(`Current game state: ${currentState}`);
+                
+                if (currentState === 'Ready') {
+                    log('✅ Game is ready, simulating SPACE key press');
+                    
+                    // Simulate space key press
+                    const spaceEvent = new KeyboardEvent('keydown', {
+                        key: ' ',
+                        code: 'Space',
+                        bubbles: true
+                    });
+                    
+                    gameWindow.document.dispatchEvent(spaceEvent);
+                    
+                    // Check if game state changed after a brief delay
+                    setTimeout(() => {
+                        const newState = gameWindow.gameState;
+                        log(`Game state after SPACE: ${newState}`);
+                        
+                        if (newState === 'Playing') {
+                            log('✅ SUCCESS! Space bar started the game', 'success');
+                            updateStatus('Space bar test PASSED', 'success');
+                        } else {
+                            log('❌ FAILED! Space bar did not start the game', 'error');
+                            updateStatus('Space bar test FAILED', 'error');
+                        }
+                    }, 500);
+                    
+                } else {
+                    log(`⚠️ Game state is ${currentState}, not Ready. Cannot test space bar start.`, 'warning');
+                    updateStatus('Game must be in Ready state to test space bar', 'warning');
+                }
+                
+            } catch (error) {
+                log(`❌ Error testing space bar: ${error.message}`, 'error');
+                updateStatus('Space bar test ERROR', 'error');
+            }
+        }
+        
+        function testModalDirectly() {
+            if (!gameWindow) {
+                updateStatus('Game not loaded yet!', 'error');
+                return;
+            }
+            
+            log('🎭 Testing Modal Directly...', 'info');
+            updateStatus('Testing modal...', 'info');
+            
+            try {
+                // Set up test conditions
+                gameWindow.score = 150;
+                gameWindow.gameState = 'GameOver';
+                gameWindow.gameWasPlayed = true;
+                gameWindow.gameStartTime = Date.now() - 10000;
+                gameWindow.scoreSubmitted = false;
+                gameWindow.pageLoadTime = Date.now() - 60000;
+                
+                log('✅ Test conditions set:');
+                log(`- score: ${gameWindow.score}`);
+                log(`- gameState: ${gameWindow.gameState}`);
+                log(`- gameWasPlayed: ${gameWindow.gameWasPlayed}`);
+                log(`- gameStartTime: ${gameWindow.gameStartTime}`);
+                log(`- scoreSubmitted: ${gameWindow.scoreSubmitted}`);
+                
+                // Test showNameInputModal function
+                if (typeof gameWindow.showNameInputModal === 'function') {
+                    log('🚀 Calling showNameInputModal()...');
+                    gameWindow.showNameInputModal();
+                    
+                    // Check if modal is visible
+                    setTimeout(() => {
+                        const modal = gameWindow.document.getElementById('nameInputModal');
+                        const isVisible = modal && !modal.classList.contains('hide');
+                        
+                        if (isVisible) {
+                            log('✅ SUCCESS! Modal is visible', 'success');
+                            updateStatus('Modal test PASSED', 'success');
+                        } else {
+                            log('❌ FAILED! Modal is not visible', 'error');
+                            updateStatus('Modal test FAILED', 'error');
+                        }
+                    }, 500);
+                } else {
+                    log('❌ showNameInputModal function not found', 'error');
+                    updateStatus('showNameInputModal function missing!', 'error');
+                }
+                
+            } catch (error) {
+                log(`❌ Error testing modal: ${error.message}`, 'error');
+                updateStatus('Modal test ERROR', 'error');
+            }
+        }
+        
+        function testConsecutiveGames() {
+            if (!gameWindow) {
+                updateStatus('Game not loaded yet!', 'error');
+                return;
+            }
+            
+            log('🔄 Testing Consecutive Games...', 'info');
+            updateStatus('Testing consecutive games...', 'info');
+            
+            try {
+                log('1️⃣ First Game:');
+                
+                // Reset to Ready state
+                gameWindow.gameState = 'Ready';
+                gameWindow.updateUI();
+                log('- Set to Ready state and called updateUI()');
+                
+                // Simulate first game
+                gameWindow.gameState = 'Playing';
+                gameWindow.gameStartTime = Date.now() - 5000;
+                gameWindow.gameWasPlayed = true;
+                gameWindow.scoreSubmitted = false;
+                gameWindow.score = 100;
+                
+                // End first game
+                gameWindow.gameState = 'GameOver';
+                gameWindow.updateUI();
+                log('- First game ended with score 100');
+                
+                // Check modal after first game
+                setTimeout(() => {
+                    const modal1 = gameWindow.document.getElementById('nameInputModal');
+                    const isVisible1 = modal1 && !modal1.classList.contains('hide');
+                    log(`- First game modal visible: ${isVisible1}`);
+                    
+                    // Skip first modal and start second game
+                    if (isVisible1) {
+                        gameWindow.document.getElementById('skipHighScore').click();
+                    }
+                    
+                    // Second game after brief delay
+                    setTimeout(() => {
+                        log('2️⃣ Second Game:');
+                        
+                        // Reset for second game
+                        gameWindow.gameState = 'Ready';
+                        gameWindow.updateUI();
+                        log('- Reset to Ready state');
+                        
+                        // Start second game
+                        gameWindow.gameState = 'Playing';
+                        gameWindow.gameStartTime = Date.now() - 3000;
+                        gameWindow.gameWasPlayed = true;
+                        gameWindow.scoreSubmitted = false;
+                        gameWindow.score = 75;
+                        
+                        // End second game
+                        gameWindow.gameState = 'GameOver';
+                        gameWindow.updateUI();
+                        log('- Second game ended with score 75');
+                        
+                        // Check modal after second game
+                        setTimeout(() => {
+                            const modal2 = gameWindow.document.getElementById('nameInputModal');
+                            const isVisible2 = modal2 && !modal2.classList.contains('hide');
+                            log(`- Second game modal visible: ${isVisible2}`, isVisible2 ? 'success' : 'error');
+                            
+                            if (isVisible1 && isVisible2) {
+                                updateStatus('Consecutive games test PASSED', 'success');
+                            } else {
+                                updateStatus('Consecutive games test FAILED', 'error');
+                            }
+                        }, 1000);
+                        
+                    }, 1000);
+                }, 1000);
+                
+            } catch (error) {
+                log(`❌ Error testing consecutive games: ${error.message}`, 'error');
+                updateStatus('Consecutive games test ERROR', 'error');
+            }
+        }
+        
+        function checkGameState() {
+            if (!gameWindow) {
+                updateStatus('Game not loaded yet!', 'error');
+                return;
+            }
+            
+            log('🔍 Current Game State:', 'info');
+            
+            try {
+                const state = {
+                    gameState: gameWindow.gameState,
+                    score: gameWindow.score,
+                    gameStartTime: gameWindow.gameStartTime,
+                    gameWasPlayed: gameWindow.gameWasPlayed,
+                    scoreSubmitted: gameWindow.scoreSubmitted,
+                    pageLoadTime: gameWindow.pageLoadTime
+                };
+                
+                for (const [key, value] of Object.entries(state)) {
+                    log(`- ${key}: ${value}`);
+                }
+                
+                // Check modal state
+                const modal = gameWindow.document.getElementById('nameInputModal');
+                if (modal) {
+                    const isVisible = !modal.classList.contains('hide');
+                    log(`- modal visible: ${isVisible}`);
+                } else {
+                    log('- modal element: NOT FOUND');
+                }
+                
+                updateStatus('Game state check completed', 'success');
+                
+            } catch (error) {
+                log(`❌ Error checking game state: ${error.message}`, 'error');
+                updateStatus('Game state check ERROR', 'error');
+            }
+        }
+        
+        // Auto-check game state every 10 seconds
+        setInterval(() => {
+            if (gameWindow && gameWindow.gameState) {
+                const state = gameWindow.gameState;
+                const score = gameWindow.score;
+                
+                // Only log if state changes or score changes significantly
+                if (!window.lastKnownState || 
+                    window.lastKnownState !== state || 
+                    Math.abs((window.lastKnownScore || 0) - score) > 10) {
+                    
+                    log(`🎮 Game: ${state} (Score: ${score})`);
+                    window.lastKnownState = state;
+                    window.lastKnownScore = score;
+                }
+            }
+        }, 10000);
+    </script>
+</body>
+</html>

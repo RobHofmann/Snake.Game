@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Console Monitor</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            margin: 20px;
+            background: #0f0f0f;
+            color: #4deed4;
+        }
+        .console-display {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            padding: 15px;
+            border-radius: 5px;
+            height: 400px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            margin: 20px 0;
+        }
+        .test-button { 
+            padding: 10px 20px; 
+            margin: 10px; 
+            font-size: 16px; 
+            cursor: pointer;
+            background: #4deed4;
+            color: #0f0f0f;
+            border: none;
+            border-radius: 5px;
+        }
+        iframe {
+            width: 100%;
+            height: 400px;
+            border: 1px solid #333;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 Console Monitor & Modal Debug</h1>
+    
+    <div>
+        <button class="test-button" onclick="loadGame()">🎮 Load Game</button>
+        <button class="test-button" onclick="monitorConsole()">👁️ Monitor Console</button>
+        <button class="test-button" onclick="testModal()">🧪 Test Modal</button>
+        <button class="test-button" onclick="simulateScore()">🎯 Simulate Score</button>
+    </div>
+    
+    <div class="console-display" id="console-output"></div>
+    
+    <iframe id="game-frame" style="display: none;"></iframe>
+    
+    <script>
+        let gameWindow = null;
+        let monitoring = false;
+        
+        function log(message, type = 'info') {
+            const output = document.getElementById('console-output');
+            const timestamp = new Date().toLocaleTimeString();
+            const colorClass = type === 'error' ? 'color: #ff5252' : 
+                              type === 'success' ? 'color: #4deed4' : 
+                              'color: #ffffff';
+            output.innerHTML += `<div style="${colorClass}">[${timestamp}] ${message}</div>`;
+            output.scrollTop = output.scrollHeight;
+        }
+        
+        function loadGame() {
+            log('🎮 Loading game...');
+            
+            const iframe = document.getElementById('game-frame');
+            iframe.style.display = 'block';
+            iframe.src = 'http://localhost:5080/';
+            
+            iframe.onload = function() {
+                gameWindow = iframe.contentWindow;
+                log('✅ Game loaded - starting console monitoring');
+                
+                // Override console.log in the game window to capture messages
+                const originalLog = gameWindow.console.log;
+                gameWindow.console.log = function(...args) {
+                    originalLog.apply(gameWindow.console, args);
+                    log('GAME: ' + args.join(' '));
+                };
+                
+                // Override console.error too
+                const originalError = gameWindow.console.error;
+                gameWindow.console.error = function(...args) {
+                    originalError.apply(gameWindow.console, args);
+                    log('GAME ERROR: ' + args.join(' '), 'error');
+                };
+            };
+        }
+        
+        function monitorConsole() {
+            if (!gameWindow) {
+                log('❌ Load game first!', 'error');
+                return;
+            }
+            
+            if (monitoring) {
+                log('⏹️ Stopping console monitoring');
+                monitoring = false;
+                return;
+            }
+            
+            log('👁️ Starting console monitoring...');
+            monitoring = true;
+            
+            // Monitor game state changes
+            let lastGameState = '';
+            let lastScore = -1;
+            
+            const monitor = setInterval(() => {
+                if (!monitoring) {
+                    clearInterval(monitor);
+                    return;
+                }
+                
+                try {
+                    const currentState = gameWindow.gameState;
+                    const currentScore = gameWindow.score;
+                    
+                    if (currentState !== lastGameState) {
+                        log(`🎯 State: ${lastGameState} → ${currentState}`);
+                        lastGameState = currentState;
+                    }
+                    
+                    if (currentScore !== lastScore) {
+                        log(`📊 Score: ${lastScore} → ${currentScore}`);
+                        lastScore = currentScore;
+                        
+                        // Check modal state when score changes
+                        if (currentScore > 0) {
+                            const modal = gameWindow.document.getElementById('nameInputModal');
+                            const isVisible = modal && !modal.classList.contains('hide');
+                            log(`🎭 Modal visible: ${isVisible}`);
+                        }
+                    }
+                } catch (error) {
+                    log(`❌ Monitor error: ${error.message}`, 'error');
+                }
+            }, 1000);
+        }
+        
+        function testModal() {
+            if (!gameWindow) {
+                log('❌ Load game first!', 'error');
+                return;
+            }
+            
+            try {
+                log('🧪 Testing modal directly...');
+                
+                // Set up conditions
+                gameWindow.score = 100;
+                gameWindow.gameWasPlayed = true;
+                gameWindow.gameStartTime = Date.now() - 10000;
+                gameWindow.scoreSubmitted = false;
+                gameWindow.pageLoadTime = Date.now() - 30000;
+                
+                log(`✅ Conditions: score=${gameWindow.score}, gameWasPlayed=${gameWindow.gameWasPlayed}`);
+                
+                // Test showNameInputModal
+                if (typeof gameWindow.showNameInputModal === 'function') {
+                    log('🚀 Calling showNameInputModal()...');
+                    gameWindow.showNameInputModal();
+                    
+                    setTimeout(() => {
+                        const modal = gameWindow.document.getElementById('nameInputModal');
+                        const isVisible = modal && !modal.classList.contains('hide');
+                        log(`📊 Modal result: ${isVisible ? 'VISIBLE ✅' : 'HIDDEN ❌'}`, isVisible ? 'success' : 'error');
+                    }, 500);
+                } else {
+                    log('❌ showNameInputModal function not found', 'error');
+                }
+                
+            } catch (error) {
+                log(`❌ Test error: ${error.message}`, 'error');
+            }
+        }
+        
+        function simulateScore() {
+            if (!gameWindow) {
+                log('❌ Load game first!', 'error');
+                return;
+            }
+            
+            try {
+                log('🎯 Simulating game with score...');
+                
+                // Simulate complete game flow
+                gameWindow.gameState = 'GameOver';
+                gameWindow.score = 150;
+                gameWindow.gameWasPlayed = true;
+                gameWindow.gameStartTime = Date.now() - 15000;
+                gameWindow.scoreSubmitted = false;
+                gameWindow.pageLoadTime = Date.now() - 60000;
+                
+                log(`🎮 Game state: ${gameWindow.gameState}, score: ${gameWindow.score}`);
+                
+                // Call updateUI
+                if (typeof gameWindow.updateUI === 'function') {
+                    log('🔄 Calling updateUI()...');
+                    gameWindow.updateUI();
+                    
+                    setTimeout(() => {
+                        const modal = gameWindow.document.getElementById('nameInputModal');
+                        const isVisible = modal && !modal.classList.contains('hide');
+                        log(`📊 updateUI result: ${isVisible ? 'MODAL VISIBLE ✅' : 'MODAL HIDDEN ❌'}`, isVisible ? 'success' : 'error');
+                        
+                        if (!isVisible && modal) {
+                            log(`🔍 Modal classes: ${modal.className}`);
+                            log(`🔍 Modal display: ${gameWindow.getComputedStyle(modal).display}`);
+                        }
+                    }, 1000);
+                } else {
+                    log('❌ updateUI function not found', 'error');
+                }
+                
+            } catch (error) {
+                log(`❌ Simulation error: ${error.message}`, 'error');
+            }
+        }
+        
+        // Initial setup
+        log('🔍 Console Monitor Ready');
+        log('Click "Load Game" to begin monitoring...');
+    </script>
+</body>
+</html>

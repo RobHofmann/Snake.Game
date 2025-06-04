@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Snake Game Modal Test - LIVE</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #1a1a1a;
+            color: #00ff00;
+        }
+        .container {
+            display: flex;
+            gap: 20px;
+        }
+        .game-area {
+            flex: 1;
+        }
+        .debug-area {
+            flex: 1;
+            background-color: #000;
+            border: 1px solid #00ff00;
+            padding: 15px;
+            border-radius: 5px;
+            height: 600px;
+            overflow-y: auto;
+        }
+        iframe {
+            width: 100%;
+            height: 600px;
+            border: 1px solid #00ff00;
+            border-radius: 5px;
+        }
+        .test-button {
+            background-color: #00ff00;
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .test-button:hover {
+            background-color: #39ff14;
+        }
+        .status {
+            margin: 10px 0;
+            padding: 8px;
+            border-radius: 3px;
+        }
+        .success { background-color: rgba(0, 255, 0, 0.2); }
+        .error { background-color: rgba(255, 0, 0, 0.2); }
+        .info { background-color: rgba(0, 255, 255, 0.2); }
+        .warning { background-color: rgba(255, 255, 0, 0.2); }
+        #console-output {
+            background-color: #000;
+            color: #0f0;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #333;
+            padding: 10px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>🐍 Snake Game Modal Test - LIVE</h1>
+    
+    <div class="container">
+        <div class="game-area">
+            <h3>Game (localhost:5080)</h3>
+            <iframe id="game-frame" src="http://localhost:5080"></iframe>
+        </div>
+        
+        <div class="debug-area">
+            <h3>🔧 Debug Control Panel</h3>
+            
+            <div class="status info">
+                <strong>Instructions:</strong><br>
+                1. Wait for game to load (iframe on left)<br>
+                2. Click test buttons below to debug modal<br>
+                3. Or play manually: SPACE to start, play until game over
+            </div>
+            
+            <button class="test-button" onclick="checkGameState()">📊 Check Game State</button>
+            <button class="test-button" onclick="testModalDirectly()">🎭 Test Modal Directly</button>
+            <button class="test-button" onclick="simulateHighScore()">🚀 Simulate High Score</button>
+            <button class="test-button" onclick="clearConsole()">🧹 Clear Console</button>
+            
+            <div id="status-display"></div>
+            <div id="console-output"></div>
+        </div>
+    </div>
+
+    <script>
+        let gameWindow = null;
+        let consoleOutput = document.getElementById('console-output');
+        let statusDisplay = document.getElementById('status-display');
+        
+        function log(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            consoleOutput.textContent += `[${timestamp}] ${message}\n`;
+            consoleOutput.scrollTop = consoleOutput.scrollHeight;
+            console.log(message);
+        }
+        
+        function updateStatus(message, type = 'info') {
+            statusDisplay.innerHTML = `<div class="status ${type}">${message}</div>`;
+        }
+        
+        function clearConsole() {
+            consoleOutput.textContent = '';
+        }
+        
+        // Wait for iframe to load
+        document.getElementById('game-frame').onload = function() {
+            gameWindow = this.contentWindow;
+            log('✅ Game loaded successfully');
+            updateStatus('🎮 Game loaded! You can now use the test buttons or play manually.', 'success');
+        };
+        
+        function checkGameState() {
+            if (!gameWindow) {
+                updateStatus('❌ Game not loaded yet!', 'error');
+                return;
+            }
+            
+            try {
+                log('🔍 CHECKING GAME STATE:');
+                log('- gameState: ' + gameWindow.gameState);
+                log('- score: ' + gameWindow.score);
+                log('- gameStartTime: ' + gameWindow.gameStartTime);
+                log('- gameWasPlayed: ' + gameWindow.gameWasPlayed);
+                log('- scoreSubmitted: ' + gameWindow.scoreSubmitted);
+                log('- pageLoadTime: ' + gameWindow.pageLoadTime);
+                
+                if (gameWindow.gameStartTime > 0) {
+                    const timeSinceGameStart = Date.now() - gameWindow.gameStartTime;
+                    log('- timeSinceGameStart: ' + timeSinceGameStart + 'ms');
+                }
+                
+                if (gameWindow.pageLoadTime > 0) {
+                    const timeSincePageLoad = Date.now() - gameWindow.pageLoadTime;
+                    log('- timeSincePageLoad: ' + timeSincePageLoad + 'ms');
+                }
+                
+                // Check modal element
+                const modal = gameWindow.document.getElementById('nameInputModal');
+                if (modal) {
+                    log('- modal exists: YES');
+                    log('- modal classes: ' + modal.className);
+                    log('- modal display: ' + gameWindow.getComputedStyle(modal).display);
+                } else {
+                    log('- modal exists: NO');
+                }
+                
+                updateStatus('📊 Game state checked - see console output', 'success');
+                
+            } catch (error) {
+                log('❌ Error checking game state: ' + error.message);
+                updateStatus('❌ Error accessing game state', 'error');
+            }
+        }
+        
+        function testModalDirectly() {
+            if (!gameWindow) {
+                updateStatus('❌ Game not loaded yet!', 'error');
+                return;
+            }
+            
+            try {
+                log('🧪 TESTING MODAL DIRECTLY:');
+                
+                // Set up valid test conditions
+                gameWindow.score = 150;
+                gameWindow.gameWasPlayed = true;
+                gameWindow.gameStartTime = Date.now() - 10000;
+                gameWindow.scoreSubmitted = false;
+                gameWindow.pageLoadTime = Date.now() - 30000;
+                
+                log('✅ Test conditions set:');
+                log('- score: 150 (was: ' + gameWindow.score + ')');
+                log('- gameWasPlayed: true');
+                log('- gameStartTime: ' + gameWindow.gameStartTime);
+                log('- scoreSubmitted: false');
+                log('- pageLoadTime age: ' + (Date.now() - gameWindow.pageLoadTime) + 'ms');
+                
+                // Test showNameInputModal directly
+                if (typeof gameWindow.showNameInputModal === 'function') {
+                    log('🚀 Calling showNameInputModal()...');
+                    gameWindow.showNameInputModal();
+                    
+                    // Check result after a moment
+                    setTimeout(() => {
+                        const modal = gameWindow.document.getElementById('nameInputModal');
+                        const isVisible = modal && !modal.classList.contains('hide');
+                        
+                        log('📊 MODAL TEST RESULT:');
+                        log('- Modal visible: ' + isVisible);
+                        log('- Modal classes: ' + (modal ? modal.className : 'N/A'));
+                        
+                        if (isVisible) {
+                            updateStatus('✅ SUCCESS! Modal is now visible. Try typing in the name field.', 'success');
+                        } else {
+                            updateStatus('❌ FAILED! Modal is still hidden. Check console for errors.', 'error');
+                        }
+                    }, 500);
+                } else {
+                    log('❌ showNameInputModal function not found');
+                    updateStatus('❌ showNameInputModal function not found in game', 'error');
+                }
+                
+            } catch (error) {
+                log('❌ Error testing modal: ' + error.message);
+                updateStatus('❌ Error testing modal: ' + error.message, 'error');
+            }
+        }
+        
+        function simulateHighScore() {
+            if (!gameWindow) {
+                updateStatus('❌ Game not loaded yet!', 'error');
+                return;
+            }
+            
+            try {
+                log('🚀 SIMULATING HIGH SCORE SCENARIO:');
+                
+                // Force game into GameOver state with high score
+                gameWindow.score = 250;
+                gameWindow.gameState = 'GameOver';
+                gameWindow.gameWasPlayed = true;
+                gameWindow.gameStartTime = Date.now() - 15000; // 15 seconds ago
+                gameWindow.scoreSubmitted = false;
+                gameWindow.pageLoadTime = Date.now() - 60000; // 1 minute ago
+                
+                log('✅ Simulation conditions set:');
+                log('- gameState: GameOver');
+                log('- score: 250');
+                log('- gameWasPlayed: true');
+                log('- gameStartTime: ' + gameWindow.gameStartTime);
+                log('- scoreSubmitted: false');
+                log('- pageLoadTime age: ' + (Date.now() - gameWindow.pageLoadTime) + 'ms');
+                
+                // Call updateUI to trigger the normal flow
+                if (typeof gameWindow.updateUI === 'function') {
+                    log('🔄 Calling updateUI() to trigger normal flow...');
+                    gameWindow.updateUI();
+                    
+                    setTimeout(() => {
+                        const modal = gameWindow.document.getElementById('nameInputModal');
+                        const isVisible = modal && !modal.classList.contains('hide');
+                        
+                        log('📊 SIMULATION RESULT:');
+                        log('- Modal triggered: ' + isVisible);
+                        
+                        if (isVisible) {
+                            updateStatus('✅ SUCCESS! Modal triggered through normal game flow.', 'success');
+                        } else {
+                            updateStatus('❌ Modal not triggered. Check conditions in updateUI.', 'warning');
+                        }
+                    }, 1000);
+                } else {
+                    log('❌ updateUI function not found');
+                    updateStatus('❌ updateUI function not found in game', 'error');
+                }
+                
+            } catch (error) {
+                log('❌ Error simulating high score: ' + error.message);
+                updateStatus('❌ Error simulating scenario: ' + error.message, 'error');
+            }
+        }
+        
+        // Auto-check game state every 5 seconds if playing
+        setInterval(() => {
+            if (gameWindow && gameWindow.gameState === 'Playing') {
+                log('🎮 Game is active - state: ' + gameWindow.gameState + ', score: ' + gameWindow.score);
+            }
+        }, 5000);
+        
+        log('🚀 Modal test interface ready!');
+        updateStatus('🔄 Loading game...', 'info');
+    </script>
+</body>
+</html>

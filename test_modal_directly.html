@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Modal Directly</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #1a0b2e;
+            color: #4deeea;
+            padding: 20px;
+        }
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        button {
+            background-color: #4deeea;
+            color: #1a0b2e;
+            border: none;
+            padding: 15px 30px;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px;
+        }
+        button:hover {
+            background-color: #39ff14;
+        }
+        .status {
+            margin: 20px 0;
+            padding: 10px;
+            border: 1px solid #4deeea;
+            border-radius: 5px;
+        }
+        .success { border-color: #39ff14; color: #39ff14; }
+        .error { border-color: #ff3131; color: #ff3131; }
+        iframe {
+            width: 100%;
+            height: 600px;
+            border: 2px solid #4deeea;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>Snake Game Modal Direct Test</h1>
+        
+        <div class="status" id="status">Ready to test modal...</div>
+        
+        <button onclick="openGameAndTest()">🎮 Open Game & Test Modal</button>
+        <button onclick="forceShowModal()">🚀 Force Show Modal in Game</button>
+        <button onclick="testModalHTML()">🔧 Test Modal HTML Structure</button>
+        
+        <iframe id="game-iframe" src="http://localhost:5080" style="display: none;"></iframe>
+        
+        <div id="instructions">
+            <h2>Testing Instructions:</h2>
+            <ol>
+                <li><strong>Open Game & Test Modal:</strong> Loads the game in iframe for testing</li>
+                <li><strong>Force Show Modal:</strong> Directly calls the modal function to test if HTML/CSS works</li>
+                <li><strong>Test Modal HTML:</strong> Checks if modal elements exist in the game</li>
+            </ol>
+            
+            <h3>Expected Behavior:</h3>
+            <p>When you get a score > 0 and the game ends, the name input modal should appear automatically.</p>
+            
+            <h3>If Modal Doesn't Appear:</h3>
+            <ul>
+                <li>Check browser console (F12) for error messages</li>
+                <li>Look for debug messages starting with "✅", "🚫", or "⚠️"</li>
+                <li>Verify all four conditions are met: score > 0, gameStartTime > 0, gameWasPlayed = true, scoreSubmitted = false</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        function updateStatus(message, type = 'info') {
+            const status = document.getElementById('status');
+            status.textContent = message;
+            status.className = `status ${type}`;
+        }
+        
+        function openGameAndTest() {
+            updateStatus('Opening game for testing...', 'info');
+            const iframe = document.getElementById('game-iframe');
+            iframe.style.display = 'block';
+            iframe.src = 'http://localhost:5080?test=true';
+            
+            setTimeout(() => {
+                updateStatus('Game loaded! Play and get a score > 0, then check if modal appears.', 'success');
+            }, 2000);
+        }
+        
+        function forceShowModal() {
+            updateStatus('Attempting to force show modal in game...', 'info');
+            
+            try {
+                const iframe = document.getElementById('game-iframe');
+                const gameWindow = iframe.contentWindow;
+                
+                if (gameWindow && gameWindow.showNameInputModal) {
+                    // Set up test conditions
+                    gameWindow.score = 100;
+                    gameWindow.gameWasPlayed = true;
+                    gameWindow.gameStartTime = Date.now() - 5000;
+                    gameWindow.scoreSubmitted = false;
+                    
+                    // Force show modal
+                    gameWindow.showNameInputModal();
+                    updateStatus('✅ Modal function called! Check if modal appears in game.', 'success');
+                } else {
+                    updateStatus('❌ Cannot access game functions. Make sure game is loaded.', 'error');
+                }
+            } catch (error) {
+                updateStatus(`❌ Error: ${error.message}`, 'error');
+            }
+        }
+        
+        function testModalHTML() {
+            updateStatus('Testing modal HTML structure...', 'info');
+            
+            try {
+                const iframe = document.getElementById('game-iframe');
+                const gameDoc = iframe.contentDocument || iframe.contentWindow.document;
+                
+                const modal = gameDoc.getElementById('nameInputModal');
+                const input = gameDoc.getElementById('playerNameInput');
+                const submitBtn = gameDoc.getElementById('submitHighScore');
+                const skipBtn = gameDoc.getElementById('skipHighScore');
+                
+                let results = [];
+                
+                if (modal) {
+                    results.push('✅ nameInputModal element exists');
+                    results.push(`   - Classes: ${modal.className}`);
+                    results.push(`   - Display: ${window.getComputedStyle(modal).display}`);
+                } else {
+                    results.push('❌ nameInputModal element NOT found');
+                }
+                
+                if (input) {
+                    results.push('✅ playerNameInput element exists');
+                } else {
+                    results.push('❌ playerNameInput element NOT found');
+                }
+                
+                if (submitBtn) {
+                    results.push('✅ submitHighScore button exists');
+                } else {
+                    results.push('❌ submitHighScore button NOT found');
+                }
+                
+                if (skipBtn) {
+                    results.push('✅ skipHighScore button exists');
+                } else {
+                    results.push('❌ skipHighScore button NOT found');
+                }
+                
+                updateStatus(results.join('\\n'), modal && input && submitBtn && skipBtn ? 'success' : 'error');
+                
+            } catch (error) {
+                updateStatus(`❌ Cannot access game HTML: ${error.message}`, 'error');
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Consecutive Modal Fix</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #1a1a1a;
+            color: #e0e0e0;
+        }
+        
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .test-button {
+            background: linear-gradient(45deg, #4DEE5A, #39ff14);
+            border: none;
+            color: black;
+            padding: 12px 24px;
+            margin: 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        
+        .test-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(61, 238, 20, 0.4);
+        }
+        
+        .test-button:disabled {
+            background: #666;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .status {
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 8px;
+            border-left: 4px solid;
+        }
+        
+        .status.success {
+            background-color: rgba(61, 238, 20, 0.1);
+            border-color: #39ff14;
+            color: #39ff14;
+        }
+        
+        .status.error {
+            background-color: rgba(255, 49, 49, 0.1);
+            border-color: #ff3131;
+            color: #ff3131;
+        }
+        
+        .status.info {
+            background-color: rgba(77, 238, 234, 0.1);
+            border-color: #4DEEEA;
+            color: #4DEEEA;
+        }
+        
+        .console-output {
+            background-color: #000;
+            color: #00ff00;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 12px;
+            height: 400px;
+            overflow-y: auto;
+            border: 1px solid #333;
+            margin-top: 20px;
+        }
+        
+        iframe {
+            display: none;
+            width: 100%;
+            height: 600px;
+            border: 2px solid #39ff14;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+        
+        .game-cycle {
+            background-color: #2a2a2a;
+            border: 1px solid #4DEEEA;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+        }
+        
+        .cycle-header {
+            color: #4DEEEA;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        
+        .cycle-status {
+            margin: 5px 0;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🔄 Consecutive Modal Fix Test</h1>
+        
+        <div class="status info">
+            <strong>Testing the fix for consecutive modal appearances</strong><br>
+            This test verifies that the modal appears correctly for multiple consecutive games.
+        </div>
+        
+        <div style="margin: 20px 0;">
+            <button class="test-button" onclick="loadGame()">🎮 Load Game</button>
+            <button class="test-button" onclick="runConsecutiveTest()" id="run-test-btn" disabled>🔄 Run Consecutive Test</button>
+            <button class="test-button" onclick="clearConsole()">🧹 Clear Console</button>
+        </div>
+        
+        <div id="status-display"></div>
+        
+        <div id="game-cycles"></div>
+        
+        <iframe id="game-frame"></iframe>
+        
+        <div class="console-output" id="console-output"></div>
+    </div>
+
+    <script>
+        let gameWindow = null;
+        let testResults = [];
+        
+        function updateStatus(message, type = 'info') {
+            const statusDiv = document.getElementById('status-display');
+            statusDiv.innerHTML = `<div class="status ${type}">${message}</div>`;
+        }
+        
+        function log(message) {
+            const output = document.getElementById('console-output');
+            const timestamp = new Date().toLocaleTimeString();
+            output.innerHTML += `[${timestamp}] ${message}\n`;
+            output.scrollTop = output.scrollHeight;
+            console.log(message);
+        }
+        
+        function clearConsole() {
+            document.getElementById('console-output').innerHTML = '';
+            document.getElementById('game-cycles').innerHTML = '';
+            testResults = [];
+            log('Console cleared - ready for testing');
+        }
+        
+        function loadGame() {
+            log('🎮 Loading Snake game...');
+            updateStatus('Loading game...', 'info');
+            
+            const iframe = document.getElementById('game-frame');
+            iframe.style.display = 'block';
+            iframe.src = 'http://localhost:5080';
+            
+            iframe.onload = function() {
+                gameWindow = this.contentWindow;
+                log('✅ Game loaded successfully');
+                updateStatus('Game loaded! Ready for consecutive testing.', 'success');
+                document.getElementById('run-test-btn').disabled = false;
+            };
+            
+            iframe.onerror = function() {
+                log('❌ Failed to load game');
+                updateStatus('Failed to load game. Make sure server is running.', 'error');
+            };
+        }
+        
+        function addGameCycle(cycleNum, status, modalVisible, details) {
+            const cyclesDiv = document.getElementById('game-cycles');
+            const cycleDiv = document.createElement('div');
+            cycleDiv.className = 'game-cycle';
+            cycleDiv.innerHTML = `
+                <div class="cycle-header">Game Cycle ${cycleNum}</div>
+                <div class="cycle-status">Status: ${status}</div>
+                <div class="cycle-status">Modal Appeared: ${modalVisible ? '✅ YES' : '❌ NO'}</div>
+                <div class="cycle-status">Details: ${details}</div>
+            `;
+            cyclesDiv.appendChild(cycleDiv);
+        }
+        
+        async function simulateGameCycle(cycleNum) {
+            return new Promise((resolve) => {
+                try {
+                    log(`\n🎯 GAME CYCLE ${cycleNum}:`);
+                    
+                    // Step 1: Reset to Ready state
+                    gameWindow.gameState = 'Ready';
+                    gameWindow.updateUI();
+                    log(`1️⃣ Reset to Ready state`);
+                    
+                    // Step 2: Start game
+                    gameWindow.gameState = 'Playing';
+                    gameWindow.gameStartTime = Date.now() - (5000 + cycleNum * 1000); // Varying times
+                    gameWindow.gameWasPlayed = true;
+                    gameWindow.scoreSubmitted = false;
+                    gameWindow.score = 100 + (cycleNum * 50); // Increasing scores
+                    log(`2️⃣ Started game ${cycleNum} with score ${gameWindow.score}`);
+                    
+                    // Log flags before ending game
+                    log(`🔍 Flags before game end:`);
+                    log(`   - scoreSubmitted: ${gameWindow.scoreSubmitted}`);
+                    log(`   - gameWasPlayed: ${gameWindow.gameWasPlayed}`);
+                    log(`   - gameStartTime: ${gameWindow.gameStartTime}`);
+                    
+                    // Step 3: End game and trigger modal check
+                    gameWindow.gameState = 'GameOver';
+                    gameWindow.updateUI();
+                    log(`3️⃣ Game ${cycleNum} ended, calling updateUI()`);
+                    
+                    // Step 4: Check if modal appeared
+                    setTimeout(() => {
+                        const modal = gameWindow.document.getElementById('nameInputModal');
+                        const isVisible = modal && !modal.classList.contains('hide');
+                        
+                        log(`📊 CYCLE ${cycleNum} RESULT: Modal visible = ${isVisible}`);
+                        
+                        const status = isVisible ? 'SUCCESS' : 'FAILED';
+                        const details = `Score: ${gameWindow.score}, scoreSubmitted: ${gameWindow.scoreSubmitted}`;
+                        
+                        addGameCycle(cycleNum, status, isVisible, details);
+                        testResults.push({ cycle: cycleNum, success: isVisible, score: gameWindow.score });
+                        
+                        if (isVisible) {
+                            // Simulate submitting the score to reset for next cycle
+                            gameWindow.submitScore(`TestPlayer${cycleNum}`);
+                            log(`📝 Submitted score for cycle ${cycleNum}`);
+                        }
+                        
+                        resolve({ success: isVisible, score: gameWindow.score });
+                    }, 500);
+                    
+                } catch (error) {
+                    log(`❌ Error in cycle ${cycleNum}: ${error.message}`);
+                    resolve({ success: false, error: error.message });
+                }
+            });
+        }
+        
+        async function runConsecutiveTest() {
+            if (!gameWindow) {
+                updateStatus('Game not loaded! Click "Load Game" first.', 'error');
+                return;
+            }
+            
+            log('🚀 STARTING CONSECUTIVE MODAL TEST...');
+            updateStatus('Running consecutive modal test...', 'info');
+            
+            testResults = [];
+            document.getElementById('game-cycles').innerHTML = '';
+            
+            // Run 5 consecutive game cycles
+            for (let i = 1; i <= 5; i++) {
+                log(`\n=== STARTING CYCLE ${i} ===`);
+                const result = await simulateGameCycle(i);
+                
+                // Wait a bit between cycles
+                await new Promise(resolve => setTimeout(resolve, 1000));
+            }
+            
+            // Analyze results
+            const successCount = testResults.filter(r => r.success).length;
+            const totalCount = testResults.length;
+            
+            log(`\n📊 CONSECUTIVE TEST RESULTS:`);
+            log(`✅ Successful modals: ${successCount}/${totalCount}`);
+            log(`❌ Failed modals: ${totalCount - successCount}/${totalCount}`);
+            
+            if (successCount === totalCount) {
+                updateStatus(`✅ SUCCESS! All ${totalCount} consecutive games showed the modal correctly.`, 'success');
+                log('🎉 CONSECUTIVE MODAL FIX VERIFIED!');
+            } else {
+                updateStatus(`❌ FAILURE! Only ${successCount}/${totalCount} games showed the modal.`, 'error');
+                log('🚨 CONSECUTIVE MODAL ISSUE STILL EXISTS!');
+                
+                // Show which cycles failed
+                const failedCycles = testResults.filter(r => !r.success).map(r => r.cycle);
+                log(`Failed cycles: ${failedCycles.join(', ')}`);
+            }
+        }
+    </script>
+</body>
+</html>

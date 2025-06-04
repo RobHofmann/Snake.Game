@@ -78,23 +78,23 @@ public class GameEngine : IGameEngine
 
         State = GameState.Playing;
     }    /// <summary>
-    /// Updates the game state based on the current direction and time delta.
-    /// </summary>
-    /// <param name="deltaTime">The time elapsed since the last update in milliseconds.</param>
-    /// <returns>True if the game state was updated, false if the game is over or paused.</returns>
+         /// Updates the game state based on the current direction and time delta.
+         /// </summary>
+         /// <param name="deltaTime">The time elapsed since the last update in milliseconds.</param>
+         /// <returns>True if the game state was updated, false if the game is over or paused.</returns>
     public bool Update(float deltaTime)
     {
         if (State != GameState.Playing)
             return false;
 
         LastFrameTime = deltaTime;
-        
+
         // Update game logic at fixed time steps with speed multiplier applied
         _logicAccumulator += deltaTime;
-        
+
         // Apply speed multiplier to the logic update rate (lower rate = faster movement)
         var effectiveUpdateRate = _logicUpdateRate / _speedMultiplier;
-        
+
         while (_logicAccumulator >= effectiveUpdateRate)
         {
             if (!UpdateGameLogic())

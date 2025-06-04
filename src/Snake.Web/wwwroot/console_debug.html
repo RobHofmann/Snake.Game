@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Console Debug Modal Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #1a1a1a; color: #fff; }
+        .debug-output { background: #333; padding: 15px; border-radius: 5px; margin: 10px 0; }
+        .success { color: #4CAF50; }
+        .error { color: #f44336; }
+        .info { color: #2196F3; }
+        .warning { color: #ff9800; }
+        pre { background: #222; padding: 10px; border-radius: 3px; overflow-x: auto; }
+        button { padding: 10px 20px; background: #4CAF50; color: white; border: none; border-radius: 5px; cursor: pointer; margin: 5px; }
+        button:hover { background: #45a049; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Console Debug Modal Test</h1>
+    <p>This page will run the manual modal test and display results here instead of requiring console access.</p>
+    
+    <button onclick="runFullDiagnostic()">🚀 Run Full Diagnostic</button>
+    <button onclick="runModalTest()">📋 Test Modal Conditions</button>
+    <button onclick="clearOutput()">🧹 Clear Output</button>
+    
+    <div id="output"></div>
+
+    <!-- Include the game script -->
+    <script src="game.js"></script>
+    
+    <script>
+        let outputDiv = document.getElementById('output');
+        
+        function log(message, type = 'info') {
+            const className = type === 'success' ? 'success' : 
+                             type === 'error' ? 'error' : 
+                             type === 'warning' ? 'warning' : 'info';
+            outputDiv.innerHTML += `<div class="debug-output ${className}">${message}</div>`;
+            outputDiv.scrollTop = outputDiv.scrollHeight;
+        }
+        
+        function clearOutput() {
+            outputDiv.innerHTML = '';
+        }
+        
+        function runFullDiagnostic() {
+            clearOutput();
+            log('🧪 <strong>FULL DIAGNOSTIC STARTING...</strong>', 'info');
+            
+            // Check if game variables exist
+            log('<strong>📊 Current Game State:</strong>');
+            log(`- gameState: ${typeof window.gameState !== 'undefined' ? window.gameState : 'UNDEFINED'}`);
+            log(`- score: ${typeof window.score !== 'undefined' ? window.score : 'UNDEFINED'}`);
+            log(`- gameStartTime: ${typeof window.gameStartTime !== 'undefined' ? window.gameStartTime : 'UNDEFINED'}`);
+            log(`- gameWasPlayed: ${typeof window.gameWasPlayed !== 'undefined' ? window.gameWasPlayed : 'UNDEFINED'}`);
+            log(`- scoreSubmitted: ${typeof window.scoreSubmitted !== 'undefined' ? window.scoreSubmitted : 'UNDEFINED'}`);
+            log(`- pageLoadTime: ${typeof window.pageLoadTime !== 'undefined' ? window.pageLoadTime : 'UNDEFINED'}`);
+            
+            // Check if functions exist
+            log('<strong>🔧 Function Availability:</strong>');
+            log(`- updateUI: ${typeof window.updateUI === 'function' ? 'AVAILABLE' : 'MISSING'}`);
+            log(`- checkForHighScore: ${typeof window.checkForHighScore === 'function' ? 'AVAILABLE' : 'MISSING'}`);
+            log(`- showNameInputModal: ${typeof window.showNameInputModal === 'function' ? 'AVAILABLE' : 'MISSING'}`);
+            
+            // Check modal element
+            const modal = document.getElementById('nameInputModal');
+            log('<strong>🎯 Modal Element:</strong>');
+            log(`- Modal element exists: ${!!modal}`);
+            if (modal) {
+                log(`- Modal classes: "${modal.className}"`);
+                log(`- Modal display: ${window.getComputedStyle(modal).display}`);
+                log(`- Modal visible: ${!modal.classList.contains('hide')}`);
+            }
+            
+            log('✅ <strong>Full diagnostic complete</strong>', 'success');
+        }
+        
+        function runModalTest() {
+            clearOutput();
+            log('🧪 <strong>MODAL CONDITION TEST STARTING...</strong>', 'info');
+            
+            // Check if required variables exist
+            if (typeof window.gameState === 'undefined') {
+                log('❌ Game variables not loaded! Make sure game.js is loaded properly.', 'error');
+                return;
+            }
+            
+            // Set up perfect test conditions
+            log('🔧 Setting up test conditions...');
+            window.gameState = 'GameOver';
+            window.score = 150;
+            window.gameStartTime = Date.now() - 10000; // 10 seconds ago
+            window.gameWasPlayed = true;
+            window.scoreSubmitted = false;
+            window.pageLoadTime = Date.now() - 60000; // 60 seconds ago
+            
+            log('✅ Test conditions set:', 'success');
+            log(`- gameState: ${window.gameState}`);
+            log(`- score: ${window.score}`);
+            log(`- gameStartTime: ${window.gameStartTime}`);
+            log(`- gameWasPlayed: ${window.gameWasPlayed}`);
+            log(`- scoreSubmitted: ${window.scoreSubmitted}`);
+            log(`- pageLoadTime age: ${Date.now() - window.pageLoadTime} ms`);
+            
+            // Check updateUI condition
+            const updateUICondition = !window.scoreSubmitted && 
+                                     window.gameStartTime > 0 && 
+                                     window.score > 0 && 
+                                     window.gameWasPlayed;
+            
+            log('<strong>📋 UpdateUI condition check:</strong>');
+            log(`- !scoreSubmitted: ${!window.scoreSubmitted}`);
+            log(`- gameStartTime > 0: ${window.gameStartTime > 0}`);
+            log(`- score > 0: ${window.score > 0}`);
+            log(`- gameWasPlayed: ${window.gameWasPlayed}`);
+            log(`- <strong>Overall condition met: ${updateUICondition}</strong>`, updateUICondition ? 'success' : 'error');
+            
+            // Test calling updateUI
+            log('<strong>🚀 Calling updateUI()...</strong>');
+            if (typeof window.updateUI === 'function') {
+                window.updateUI();
+                
+                // Check if modal appeared
+                setTimeout(() => {
+                    const modal = document.getElementById('nameInputModal');
+                    const isVisible = modal && !modal.classList.contains('hide');
+                    
+                    log('<strong>📊 MODAL TEST RESULT:</strong>');
+                    log(`- Modal element exists: ${!!modal}`);
+                    log(`- Modal visible (no hide class): ${!modal?.classList.contains('hide')}`);
+                    log(`- Modal computed display: ${modal ? window.getComputedStyle(modal).display : 'N/A'}`);
+                    log(`- <strong>Modal is actually visible: ${isVisible}</strong>`, isVisible ? 'success' : 'error');
+                    
+                    if (isVisible) {
+                        log('✅ <strong>SUCCESS! Modal is visible!</strong>', 'success');
+                    } else {
+                        log('❌ <strong>FAILED! Modal is not visible</strong>', 'error');
+                        if (modal) {
+                            log(`🔍 Modal classes: "${modal.className}"`);
+                        }
+                    }
+                }, 500);
+            } else {
+                log('❌ updateUI function not found', 'error');
+            }
+        }
+        
+        // Auto-run diagnostic on page load
+        window.addEventListener('load', () => {
+            setTimeout(runFullDiagnostic, 1000);
+        });
+    </script>
+</body>
+</html>

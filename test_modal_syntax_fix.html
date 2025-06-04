@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Snake Modal Fix Verification</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            background: #000;
+            color: #39ff14;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            border: 2px solid #39ff14;
+            padding: 20px;
+            border-radius: 10px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #333;
+            border-radius: 5px;
+        }
+        .button {
+            background: #39ff14;
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-family: inherit;
+            font-weight: bold;
+        }
+        .button:hover {
+            background: #2ecc40;
+        }
+        .status {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 5px;
+            border: 2px solid;
+        }
+        .success { border-color: #39ff14; color: #39ff14; }
+        .error { border-color: #ff3131; color: #ff3131; }
+        .warning { border-color: #ffaa00; color: #ffaa00; }
+        .info { border-color: #00aaff; color: #00aaff; }
+        
+        .console {
+            background: #111;
+            border: 1px solid #333;
+            border-radius: 5px;
+            padding: 10px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+        
+        iframe {
+            width: 100%;
+            height: 500px;
+            border: 2px solid #39ff14;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🐍 Snake Game Modal Fix Verification</h1>
+        
+        <div class="status info">
+            <strong>Testing Status:</strong> Verifying that syntax errors have been fixed and modal now works correctly.
+        </div>
+        
+        <div class="test-section">
+            <h3>🎮 Game Interface</h3>
+            <iframe id="gameFrame" src="http://localhost:5080"></iframe>
+        </div>
+        
+        <div class="test-section">
+            <h3>🧪 Quick Tests</h3>
+            <button class="button" onclick="testGameAccess()">📡 Test Game Access</button>
+            <button class="button" onclick="testModalElements()">🎭 Test Modal Elements</button>
+            <button class="button" onclick="testModalFunction()">🚀 Test Modal Function</button>
+            <button class="button" onclick="simulateGame()">🎯 Simulate Game Over</button>
+            <button class="button" onclick="clearConsole()">🧹 Clear Console</button>
+        </div>
+        
+        <div class="test-section">
+            <h3>📊 Test Results</h3>
+            <div id="statusDisplay"></div>
+            <div id="consoleOutput" class="console"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>🔍 How to Test</h3>
+            <ol>
+                <li><strong>Click "Test Game Access"</strong> - Verifies the game is loaded and accessible</li>
+                <li><strong>Click "Test Modal Elements"</strong> - Checks if all modal HTML elements exist</li>
+                <li><strong>Click "Test Modal Function"</strong> - Directly tests the showNameInputModal function</li>
+                <li><strong>Click "Simulate Game Over"</strong> - Tests the complete game flow</li>
+                <li><strong>Manual Test</strong> - Play the game in the iframe above and verify modal appears</li>
+            </ol>
+            
+            <h4>Expected Results:</h4>
+            <ul>
+                <li>✅ All tests should pass</li>
+                <li>✅ Modal should appear when game ends with score > 0</li>
+                <li>✅ No syntax errors in console</li>
+                <li>❌ Modal should NOT appear for score = 0</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        let gameWindow = null;
+        let consoleOutput = document.getElementById('consoleOutput');
+        let statusDisplay = document.getElementById('statusDisplay');
+        
+        function log(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            consoleOutput.textContent += `[${timestamp}] ${message}\n`;
+            consoleOutput.scrollTop = consoleOutput.scrollHeight;
+            console.log(message);
+        }
+        
+        function updateStatus(message, type = 'info') {
+            statusDisplay.innerHTML = `<div class="status ${type}">${message}</div>`;
+        }
+        
+        function clearConsole() {
+            consoleOutput.textContent = '';
+            log('Console cleared');
+        }
+        
+        // Wait for iframe to load
+        document.getElementById('gameFrame').onload = function() {
+            try {
+                gameWindow = this.contentWindow;
+                log('✅ Game iframe loaded successfully');
+                updateStatus('Game loaded successfully', 'success');
+            } catch (error) {
+                log(`❌ Error accessing game window: ${error.message}`);
+                updateStatus('Error accessing game window', 'error');
+            }
+        };
+        
+        function testGameAccess() {
+            log('🧪 TESTING GAME ACCESS...');
+            
+            if (!gameWindow) {
+                log('❌ Game window not accessible');
+                updateStatus('Game window not accessible', 'error');
+                return;
+            }
+            
+            try {
+                // Test basic game variables
+                const score = gameWindow.score;
+                const gameState = gameWindow.gameState;
+                
+                log(`✅ Game access successful`);
+                log(`- Current score: ${score}`);
+                log(`- Current gameState: ${gameState}`);
+                log(`- gameWasPlayed: ${gameWindow.gameWasPlayed}`);
+                log(`- scoreSubmitted: ${gameWindow.scoreSubmitted}`);
+                
+                updateStatus('Game access test passed', 'success');
+                
+            } catch (error) {
+                log(`❌ Error accessing game variables: ${error.message}`);
+                updateStatus('Game access test failed', 'error');
+            }
+        }
+        
+        function testModalElements() {
+            log('🎭 TESTING MODAL ELEMENTS...');
+            
+            if (!gameWindow) {
+                log('❌ Game window not available');
+                updateStatus('Game not loaded', 'error');
+                return;
+            }
+            
+            try {
+                const elements = {
+                    'nameInputModal': gameWindow.document.getElementById('nameInputModal'),
+                    'playerNameInput': gameWindow.document.getElementById('playerNameInput'),
+                    'submitHighScore': gameWindow.document.getElementById('submitHighScore'),
+                    'skipHighScore': gameWindow.document.getElementById('skipHighScore'),
+                    'highScoreValue': gameWindow.document.getElementById('highScoreValue')
+                };
+                
+                let allExist = true;
+                for (const [name, element] of Object.entries(elements)) {
+                    if (element) {
+                        log(`✅ ${name}: Found`);
+                    } else {
+                        log(`❌ ${name}: Missing`);
+                        allExist = false;
+                    }
+                }
+                
+                if (allExist) {
+                    log('✅ All modal elements found');
+                    updateStatus('Modal elements test passed', 'success');
+                } else {
+                    log('❌ Some modal elements missing');
+                    updateStatus('Modal elements test failed', 'error');
+                }
+                
+            } catch (error) {
+                log(`❌ Error checking modal elements: ${error.message}`);
+                updateStatus('Modal elements test failed', 'error');
+            }
+        }
+        
+        function testModalFunction() {
+            log('🚀 TESTING MODAL FUNCTION...');
+            
+            if (!gameWindow) {
+                log('❌ Game window not available');
+                updateStatus('Game not loaded', 'error');
+                return;
+            }
+            
+            try {
+                // Set up valid test conditions
+                log('🔧 Setting up test conditions...');
+                gameWindow.score = 150;
+                gameWindow.gameWasPlayed = true;
+                gameWindow.gameStartTime = Date.now() - 10000;
+                gameWindow.scoreSubmitted = false;
+                gameWindow.pageLoadTime = Date.now() - 30000;
+                
+                log('✅ Test conditions set');
+                
+                // Test the function
+                if (typeof gameWindow.showNameInputModal === 'function') {
+                    log('🎯 Calling showNameInputModal()...');
+                    gameWindow.showNameInputModal();
+                    
+                    // Check result
+                    setTimeout(() => {
+                        const modal = gameWindow.document.getElementById('nameInputModal');
+                        const isVisible = modal && !modal.classList.contains('hide');
+                        
+                        log(`📊 Result: Modal visible = ${isVisible}`);
+                        
+                        if (isVisible) {
+                            log('✅ SUCCESS: Modal function works correctly!');
+                            updateStatus('Modal function test passed', 'success');
+                            
+                            // Test input
+                            const input = gameWindow.document.getElementById('playerNameInput');
+                            if (input) {
+                                input.value = 'TestPlayer';
+                                log('✅ Input field working');
+                            }
+                        } else {
+                            log('❌ FAILED: Modal function not working');
+                            updateStatus('Modal function test failed', 'error');
+                        }
+                    }, 500);
+                } else {
+                    log('❌ showNameInputModal function not found');
+                    updateStatus('Modal function not found', 'error');
+                }
+                
+            } catch (error) {
+                log(`❌ Error testing modal function: ${error.message}`);
+                updateStatus('Modal function test failed', 'error');
+            }
+        }
+        
+        function simulateGame() {
+            log('🎯 SIMULATING COMPLETE GAME...');
+            
+            if (!gameWindow) {
+                log('❌ Game window not available');
+                updateStatus('Game not loaded', 'error');
+                return;
+            }
+            
+            try {
+                // Simulate complete game scenario
+                log('🔧 Setting up game completion scenario...');
+                gameWindow.score = 200;
+                gameWindow.gameState = 'GameOver';
+                gameWindow.gameWasPlayed = true;
+                gameWindow.gameStartTime = Date.now() - 15000;
+                gameWindow.scoreSubmitted = false;
+                gameWindow.pageLoadTime = Date.now() - 60000;
+                
+                log('✅ Game completion scenario set');
+                log(`- Score: ${gameWindow.score}`);
+                log(`- GameState: ${gameWindow.gameState}`);
+                
+                // Call updateUI to trigger normal flow
+                if (typeof gameWindow.updateUI === 'function') {
+                    log('🔄 Triggering updateUI()...');
+                    gameWindow.updateUI();
+                    
+                    // Check result
+                    setTimeout(() => {
+                        const modal = gameWindow.document.getElementById('nameInputModal');
+                        const isVisible = modal && !modal.classList.contains('hide');
+                        
+                        log(`📊 Game flow result: Modal visible = ${isVisible}`);
+                        
+                        if (isVisible) {
+                            log('✅ SUCCESS: Complete game flow works!');
+                            updateStatus('Game simulation test passed', 'success');
+                        } else {
+                            log('❌ FAILED: Game flow not triggering modal');
+                            updateStatus('Game simulation test failed', 'error');
+                        }
+                    }, 1000);
+                } else {
+                    log('❌ updateUI function not found');
+                    updateStatus('updateUI function not found', 'error');
+                }
+                
+            } catch (error) {
+                log(`❌ Error simulating game: ${error.message}`);
+                updateStatus('Game simulation test failed', 'error');
+            }
+        }
+        
+        // Initial setup
+        log('🐍 Snake Game Modal Fix Verification Ready');
+        log('Wait for game to load, then run tests...');
+        updateStatus('Waiting for game to load...', 'info');
+    </script>
+</body>
+</html>
