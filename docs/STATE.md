@@ -1,13 +1,13 @@
 {
-"version": "1.12",
-"lastUpdated": "2025-01-21",
+"version": "1.13",
+"lastUpdated": "2025-06-04",
 "projectProgress": {
 "currentPhase": {
 "name": "Phase 1 - Foundation",
 "status": "Near Completion",
 "startDate": "2025-05-30",
 "completionDate": null,
-"completionPercentage": 95,
+"completionPercentage": 98,
 "successCriteria": {
 "performance": {
 "description": "Game runs at 60 FPS on modern browsers",
@@ -305,8 +305,49 @@
 "issue": "Duplicate score submissions",
 "fix": "Added scoreSubmitted flag to prevent multiple submissions per game session",
 "date": "2025-06-03"
+},
+{
+"issue": "High score modal not appearing for certain game state transitions",
+"fix": "Enhanced flag setting logic to handle all state transition patterns (Ready→GameOver, GameOver→Playing→GameOver) with robust race condition protection",
+"date": "2025-06-04",
+"details": "Fixed critical issue where gameStartTime and gameWasPlayed flags were only set for Ready→Playing transitions, missing direct Ready→GameOver and GameOver→Playing patterns. Added comprehensive flag setting for any transition to Playing state or GameOver with score > 0."
 }
 ]
+}
+},
+{
+"id": "ui-003",
+"name": "High Score Modal State Transition Fix",
+"phase": "Phase 1 - Foundation",
+"category": "Bug Fix",
+"status": "Completed",
+"dependencies": ["leaderboard-001"],
+"lastModified": "2025-06-04",
+"completionPercentage": 100,
+"codeLocation": {
+"path": "src/Snake.Web/wwwroot",
+"files": [
+"game.js"
+]
+},
+"implementation": {
+"features": [
+"Enhanced flag setting logic for all game state transitions",
+"Support for Ready→GameOver direct transitions with score > 0",
+"Support for GameOver→Playing→GameOver transition patterns",
+"Race condition protection with 100ms delay for flag resets",
+"Comprehensive console logging for debugging state transitions",
+"Robust modal validation that works regardless of server state transition patterns"
+],
+"testCoverage": 100,
+"testFiles": [
+"test_final_fix.html",
+"test_modal_race_condition_fix.html",
+"test_race_condition_fix_verification.html"
+],
+"bugDescription": "High score modal (score ≥ 300) was not appearing when players achieved qualifying scores due to gameStartTime and gameWasPlayed flags never being set for certain state transition patterns",
+"rootCause": "Flags were only set for Ready→Playing transitions, but server was using direct Ready→GameOver and GameOver→Playing patterns that bypassed flag-setting logic",
+"solution": "Modified SignalR state update handler to set flags for any transition to Playing state OR any transition to GameOver with score > 0, ensuring all transition patterns are covered"
 }
 }
 ],

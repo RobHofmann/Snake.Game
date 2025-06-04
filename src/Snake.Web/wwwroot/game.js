@@ -92,22 +92,47 @@ async function setupSignalR() {
         connection = new signalR.HubConnectionBuilder()
             .withUrl(`${API_BASE_URL}/gamehub`)
             .withAutomaticReconnect()
-            .build();        // Handle game state updates from server
+            .build();
+        
+        // Handle game state updates from server
         connection.on('UpdateGameState', (state) => {
-            if (state) {                const previousGameState = gameState;
+            if (state) {
+                const previousGameState = gameState;
                 const previousScore = score;
                 const previousSnakeLength = snake.length;
                 
                 gameState = state.gameState || 'Ready';
                 score = state.score || 0;
                 snake = Array.isArray(state.snake) ? state.snake : [];
-                food = state.food || { x: 0, y: 0 };                // Only log significant state changes, not every update
+                food = state.food || { x: 0, y: 0 };
+                
+                // Only log significant state changes, not every update
                 if (previousGameState !== gameState) {
                     console.log(`Game state: ${previousGameState} → ${gameState}, score: ${score}`);
-                }// Set gameStartTime when transitioning from Ready to Playing
-                if (previousGameState === 'Ready' && gameState === 'Playing' && gameStartTime === 0) {
-                    gameStartTime = Date.now();
+                }                  // Set flags when game actually starts (any transition to Playing OR when score > 0)
+                const gameActuallyStarted = (gameState === 'Playing') || 
+                                          (gameState === 'GameOver' && score > 0 && gameStartTime === 0);
+                
+                if (gameActuallyStarted) {
+                    console.log(`🎮 CONSECUTIVE MODAL DEBUG: Game started - ${previousGameState} → ${gameState}, score: ${score}`);
+                    console.log(`   Before conditional setting - gameStartTime: ${gameStartTime}, gameWasPlayed: ${gameWasPlayed}`);
+                    
+                    // Always ensure gameStartTime is set when game actually starts
+                    if (gameStartTime === 0) {
+                        console.log('   Setting gameStartTime via SignalR (was 0)');
+                        gameStartTime = Date.now();
+                    } else {
+                        console.log('   gameStartTime already set, keeping existing value');
+                    }
+                    
                     gameWasPlayed = true; // Mark that a real game was started
+                    scoreSubmitted = false; // ALWAYS reset score submission flag for new game
+                    
+                    console.log(`   After setting flags - gameStartTime: ${gameStartTime}, gameWasPlayed: ${gameWasPlayed}, scoreSubmitted: ${scoreSubmitted}`);
+                }
+                
+                // Handle powerup panel freezing for Playing state specifically
+                if (previousGameState === 'Ready' && gameState === 'Playing') {
                     powerupPanelFrozen = true; // FREEZE powerup panel during gameplay
                     
                     //// NUCLEAR OPTION: Completely hide the powerup canvas during gameplay
@@ -120,13 +145,14 @@ async function setupSignalR() {
                 // Show powerup panel when game ends
                 if (gameState === 'GameOver' && powerupPanelFrozen) {
                     powerupPanelFrozen = false;
-                    
-                    // Show the powerup canvas again
+                      // Show the powerup canvas again
                     if (powerupCanvas) {
                         powerupCanvas.style.display = 'block';
                         console.log('🎮 Game ended, powerup canvas SHOWN');
                     }
-                }// Update power-ups while preserving color information more efficiently
+                }
+                
+                // Update power-ups while preserving color information more efficiently
                 const previousPowerUpsState = JSON.stringify(powerUps || []);
                 if (Array.isArray(state.powerUps)) {
                     powerUps = state.powerUps.map(p => ({
@@ -135,16 +161,19 @@ async function setupSignalR() {
                     }));
                 } else {
                     powerUps = [];
-                }                // Only force redraw for significant changes, not direction-only updates
+                }
+                
+                // Only force redraw for significant changes, not direction-only updates
                 const currentPowerUpsState = JSON.stringify(powerUps);
                 const snakeGrew = snake.length > previousSnakeLength;
                 const scoreChanged = score !== previousScore;
                 const powerUpsChanged = currentPowerUpsState !== previousPowerUpsState;
                 const gameStateChanged = gameState !== previousGameState;
-                
-                if (powerUpsChanged || snakeGrew || scoreChanged || gameStateChanged) {
+                  if (powerUpsChanged || snakeGrew || scoreChanged || gameStateChanged) {
                     lastGameStateHash = ''; // Force redraw only for meaningful changes
-                }                // POWERUP PANEL STABILITY SYSTEM - Filter out inconsistent server data
+                }
+                
+                // POWERUP PANEL STABILITY SYSTEM - Filter out inconsistent server data
                 if (!powerupPanelFrozen) {
                     // Track powerup data history to detect server inconsistencies
                     powerupDataHistory.push({
@@ -210,12 +239,16 @@ async function setupSignalR() {
                     console.log('🧊 POWERUP DATA IGNORED (panel frozen during gameplay)');
                 }
                 
-                // NO immediate powerup panel updates - let gameLoop handle everything with timing// Update power-up effect states consistently
+                // NO immediate powerup panel updates - let gameLoop handle everything with timing
+                
+                // Update power-up effect states consistently
                 isShieldActive = state.isShieldActive || false;
                 isDoublePointsActive = state.isDoublePointsActive || false;
                 speedMultiplier = state.speedMultiplier || 1.0;
                 
-                updateUI();                // Force initial render when game starts to ensure proper display
+                updateUI();
+                
+                // Force initial render when game starts to ensure proper display
                 if (previousGameState === 'Ready' && gameState === 'Playing') {
                     drawGame();
                     // Don't draw powerup panel - it will be hidden anyway
@@ -439,6 +472,99 @@ function drawPowerupPanel() {
     }
 }
 
+// Optimistic update functions for instant leaderboard feedback
+function addOptimisticScore(playerName, score) {
+    try {
+        const tbody = document.getElementById('leaderboardBody');
+        if (!tbody) return;
+        
+        console.log('Adding optimistic score:', playerName, score);
+        
+        // Create a new row for the submitted score
+        const newRow = document.createElement('tr');
+        newRow.classList.add('optimistic-score');
+        newRow.innerHTML = `
+            <td>?</td>
+            <td>${playerName}</td>
+            <td>${score}</td>
+            <td>Just now</td>
+        `;
+        
+        // Find where to insert the new score (sorted by score descending)
+        const existingRows = Array.from(tbody.querySelectorAll('tr:not(.optimistic-score)'));
+        let insertIndex = 0;
+        
+        for (let i = 0; i < existingRows.length; i++) {
+            const existingScore = parseInt(existingRows[i].cells[2].textContent);
+            if (score > existingScore) {
+                insertIndex = i;
+                break;
+            } else {
+                insertIndex = i + 1;
+            }
+        }
+        
+        // Insert the row at the correct position
+        if (insertIndex >= existingRows.length) {
+            tbody.appendChild(newRow);
+        } else {
+            tbody.insertBefore(newRow, existingRows[insertIndex]);
+        }
+        
+        // Update ranks for all rows
+        updateOptimisticRanks();
+        
+        // Add a subtle highlight to show it's pending
+        newRow.style.backgroundColor = 'rgba(77, 238, 234, 0.2)';
+        newRow.style.border = '1px solid rgba(77, 238, 234, 0.5)';
+        
+    } catch (error) {
+        console.error('Error adding optimistic score:', error);
+    }
+}
+
+function removeOptimisticScore(playerName, score) {
+    try {
+        const tbody = document.getElementById('leaderboardBody');
+        if (!tbody) return;
+        
+        console.log('Removing optimistic score:', playerName, score);
+        
+        // Find and remove the optimistic score
+        const optimisticRows = tbody.querySelectorAll('tr.optimistic-score');
+        optimisticRows.forEach(row => {
+            const rowPlayerName = row.cells[1].textContent;
+            const rowScore = parseInt(row.cells[2].textContent);
+            if (rowPlayerName === playerName && rowScore === score) {
+                row.remove();
+            }
+        });
+        
+        // Update ranks for remaining rows
+        updateOptimisticRanks();
+        
+    } catch (error) {
+        console.error('Error removing optimistic score:', error);
+    }
+}
+
+function updateOptimisticRanks() {
+    try {
+        const tbody = document.getElementById('leaderboardBody');
+        if (!tbody) return;
+        
+        const allRows = tbody.querySelectorAll('tr');
+        allRows.forEach((row, index) => {
+            if (row.cells && row.cells[0]) {
+                row.cells[0].textContent = index + 1;
+            }
+        });
+        
+    } catch (error) {
+        console.error('Error updating optimistic ranks:', error);
+    }
+}
+
 // Utility function to get power-up color based on type
 function getPowerUpColor(type) {
     switch (type) {
@@ -508,36 +634,80 @@ function getEffectDuration(type) {
 function updateUI() {
     scoreElement.textContent = score;
     gameStatusElement.textContent = gameState;
-    finalScoreElement.textContent = score;
-
-    // Show/hide screens based on game state
+    finalScoreElement.textContent = score;    // Show/hide screens based on game state
     if (gameState === 'Ready') {
         startScreen.classList.remove('hide');
         gameOverScreen.classList.add('hide');
         canvas.classList.add('hide');
         powerupCanvas.classList.add('hide');
         nameInputModal.classList.add('hide');
-        
-        // Reset game session flags
-        scoreSubmitted = false; // Reset score submission flag for new game
-        gameStartTime = 0; // Reset game start time
-        gameWasPlayed = false; // Reset game played flag
-    } else if (gameState === 'GameOver') {
+          // FIXED: Only reset flags when transitioning FROM GameOver TO Ready
+        // This prevents resetting flags multiple times during consecutive games
+        // DELAY flag reset to prevent race condition with modal validation
+        if (!window.readyStateActive) {
+            console.log('🔄 CONSECUTIVE MODAL DEBUG: First time entering Ready state - scheduling delayed flag reset...');
+            console.log(`   Before reset - scoreSubmitted: ${scoreSubmitted}, gameStartTime: ${gameStartTime}, gameWasPlayed: ${gameWasPlayed}`);
+            
+            // Reset scoreSubmitted immediately as this is safe
+            scoreSubmitted = false;
+            
+            // Delay resetting gameStartTime and gameWasPlayed to allow modal validation to complete
+            setTimeout(() => {
+                console.log('🔄 CONSECUTIVE MODAL DEBUG: Executing delayed flag reset...');
+                console.log(`   Before delayed reset - gameStartTime: ${gameStartTime}, gameWasPlayed: ${gameWasPlayed}`);
+                
+                gameStartTime = 0; // Reset game start time
+                gameWasPlayed = false; // Reset game played flag
+                
+                console.log(`   After delayed reset - gameStartTime: ${gameStartTime}, gameWasPlayed: ${gameWasPlayed}`);
+            }, 100); // 100ms delay should be enough for modal validation to complete
+            
+            console.log(`   After immediate reset - scoreSubmitted: ${scoreSubmitted} (gameStartTime and gameWasPlayed will reset in 100ms)`);
+            
+            // Mark that we're now in Ready state to prevent repeated resets
+            window.readyStateActive = true;
+        } else {
+            console.log('🔄 CONSECUTIVE MODAL DEBUG: Already in Ready state - skipping flag reset');
+        }} else if (gameState === 'GameOver') {
         startScreen.classList.add('hide');
         gameOverScreen.classList.remove('hide');
         canvas.classList.remove('hide');
-        powerupCanvas.classList.remove('hide');
-        nameInputModal.classList.add('hide');
-
+        // FIXED: Consistent powerup canvas visibility - only show if not frozen (same as Playing state)
+        if (!powerupPanelFrozen) {
+            powerupCanvas.classList.remove('hide');
+        }
+        // Don't force-hide modal here - let checkForHighScore() decide whether to show it
+        
+        // Clear Ready state flag since we're leaving Ready state
+        window.readyStateActive = false;
+        
         // Only attempt to submit score once per game session AND only if a real game was played
-        if (!scoreSubmitted && gameStartTime > 0 && score > 0 && gameWasPlayed) {
+        console.log('🔍 CONSECUTIVE MODAL DEBUG: Checking modal conditions...');
+        console.log(`   scoreSubmitted: ${scoreSubmitted} (should be false)`);
+        console.log(`   gameStartTime: ${gameStartTime} (should be > 0)`);
+        console.log(`   score: ${score} (should be > 0)`);
+        console.log(`   gameWasPlayed: ${gameWasPlayed} (should be true)`);
+        
+        const condition1 = !scoreSubmitted;
+        const condition2 = gameStartTime > 0;
+        const condition3 = score > 0;
+        const condition4 = gameWasPlayed;
+        const allConditionsMet = condition1 && condition2 && condition3 && condition4;
+        
+        console.log(`🧮 Individual conditions: !scoreSubmitted=${condition1}, gameStartTime>0=${condition2}, score>0=${condition3}, gameWasPlayed=${condition4}`);
+        console.log(`🎯 ALL CONDITIONS MET: ${allConditionsMet}`);
+          if (allConditionsMet) {
             console.log('✅ High score check: conditions met, checking leaderboard...');
+            console.log(`Debug - Score: ${score}, GameStartTime: ${gameStartTime}, GameWasPlayed: ${gameWasPlayed}, ScoreSubmitted: ${scoreSubmitted}`);
             checkForHighScore();
         } else {
             // If conditions aren't met, just submit anonymously without modal (only if gameWasPlayed)
             if (!scoreSubmitted && gameWasPlayed && (gameStartTime <= 0 || score <= 0)) {
                 console.log('📝 Submitting anonymous score for completed game');
+                console.log(`Debug - Score: ${score}, GameStartTime: ${gameStartTime}, GameWasPlayed: ${gameWasPlayed}, ScoreSubmitted: ${scoreSubmitted}`);
                 submitScore('Anonymous');
+            } else if (!scoreSubmitted) {
+                console.log(`⚠️ High score check blocked - Score: ${score}, GameStartTime: ${gameStartTime}, GameWasPlayed: ${gameWasPlayed}, ScoreSubmitted: ${scoreSubmitted}`);
             }
         }    } else {
         startScreen.classList.add('hide');
@@ -548,135 +718,116 @@ function updateUI() {
             powerupCanvas.classList.remove('hide');
         }
         nameInputModal.classList.add('hide');
+        
+        // Clear Ready state flag since we're leaving Ready state
+        window.readyStateActive = false;
     }
-}// Function to check if current score qualifies for high score entry
+}
+
+// Function to check if current score qualifies for high score entry
 async function checkForHighScore() {
-    // CRITICAL: Block all modals during page load period (PRIMARY FIX)
+    // Basic validation - only check essential conditions
     const timeSincePageLoad = Date.now() - pageLoadTime;
-    if (timeSincePageLoad < 5000) {
-        console.log('🚫 BLOCKING: Still in page load grace period, submitting as Anonymous');
+      // Only block for first 500ms to prevent page load issues
+    if (timeSincePageLoad < 500) {
+        console.log('🚫 Too soon after page load, submitting as Anonymous');
         submitScore('Anonymous');
         return;
     }
     
-    // Don't show name input for scores of 0 or negative scores
+    // Don't show modal for zero/negative scores
     if (score <= 0) {
-        console.log('🚫 BLOCKING: Score is 0 or negative, submitting as Anonymous');
+        console.log('🚫 Score is 0 or negative, submitting as Anonymous');
         submitScore('Anonymous');
         return;
     }
     
-    // Don't show name input if no game has been started (gameStartTime not set)
-    if (!gameStartTime || gameStartTime === 0) {
-        console.log('🚫 BLOCKING: Game not started (gameStartTime is 0), submitting as Anonymous');
+    // Don't show modal if no actual game was played
+    if (!gameWasPlayed || !gameStartTime) {
+        console.log('🚫 No real game played, submitting as Anonymous');
         submitScore('Anonymous');
         return;
     }
     
-    // Don't show name input if no real game was played
-    if (!gameWasPlayed) {
-        console.log('🚫 BLOCKING: No real game was played, submitting as Anonymous');
-        submitScore('Anonymous');
-        return;
-    }
+    console.log('✅ All conditions met, showing name input modal for score:', score);
     
-    // Additional check: Ensure this isn't happening during page load/initial state
-    // If gameStartTime was set less than 1 second ago, it might be from initial load
-    const timeSinceGameStart = Date.now() - gameStartTime;
-    if (timeSinceGameStart < 1000) {
-        console.log('🚫 BLOCKING: Game started too recently (potential page load), submitting as Anonymous');
-        submitScore('Anonymous');
-        return;
-    }
+    // SIMPLIFIED: For now, show modal for ANY score > 0 to test the functionality
+    // This will help us determine if the issue is with the leaderboard API or the modal itself
+    showNameInputModal();
     
-    try {        // Get current leaderboard to check if this is a high score
+    // TODO: Uncomment the code below once basic modal functionality is confirmed
+    /*
+    try {
+        // Get current leaderboard to check if this is a qualifying score
         const response = await fetch(`${API_BASE_URL}/api/leaderboard/scores/top?limit=10`);
         if (response.ok) {
             const scores = await response.json();
             const lowestHighScore = scores.length > 0 ? Math.min(...scores.map(s => s.score)) : 0;
             
-            // If player scored higher than lowest high score or (leaderboard has less than 10 entries AND score > 0)
-            const isHigherScore = score > lowestHighScore;
-            const hasRoomInLeaderboard = scores.length < 10;
-            const isQualifyingScore = isHigherScore || (hasRoomInLeaderboard && score > 0);
+            // Show modal if score is higher than lowest OR leaderboard has room
+            const isQualifyingScore = score > lowestHighScore || scores.length < 10;
             
             if (isQualifyingScore) {
-                console.log('🎉 Score qualifies for leaderboard, showing modal');
+                console.log('🎉 Score qualifies! Showing name input modal');
                 showNameInputModal();
             } else {
-                console.log('📝 Score not high enough, submitting as Anonymous');
-                submitScore('Anonymous');
-            }        } else {
-            // If can't fetch leaderboard, only show name input for scores > 0
-            if (score > 0) {
-                console.log('🎉 Fallback: Score > 0, showing modal');
-                showNameInputModal();
-            } else {
-                console.log('📝 Fallback: Score <= 0, submitting as Anonymous');
+                console.log('📝 Score not high enough for leaderboard, submitting as Anonymous');
                 submitScore('Anonymous');
             }
-        }    } catch (error) {
-        console.error('💥 Error checking for high score:', error);
-        // On error, only show name input for scores > 0
-        if (score > 0) {
-            showNameInputModal();
         } else {
-            submitScore('Anonymous');
+            // If API fails, show modal for any score > 0 (better UX)
+            console.log('⚠️ API error, showing modal for score > 0');
+            showNameInputModal();
         }
+    } catch (error) {
+        console.error('💥 Error checking leaderboard:', error);
+        // On error, show modal for any score > 0
+        showNameInputModal();
     }
+    */
 }// Function to show name input modal
 function showNameInputModal() {
-    // NUCLEAR OPTION: Absolutely prevent modal for first 15 seconds after page load
-    const timeSincePageLoad = Date.now() - pageLoadTime;
-    if (timeSincePageLoad < 15000) { // 15 seconds - very aggressive
-        console.log('🚫 Modal blocked due to recent page load (NUCLEAR PROTECTION)');
-        return; // Don't even submit score, just return
-    }
-    
-    // Additional safety checks to prevent any modal from showing inappropriately
+    // Final safety check - don't show modal if score is 0 or negative
     if (score <= 0) {
-        console.log('🚫 Modal blocked due to zero or negative score');
+        console.log('🚫 Modal blocked - score is 0 or negative');
         submitScore('Anonymous');
         return;
     }
     
-    if (!gameWasPlayed) {
-        console.log('🚫 Modal blocked - no real game played');
-        submitScore('Anonymous');
-        return;
-    }
+    console.log('✅ Showing name input modal for score:', score);
     
-    if (!gameStartTime || gameStartTime === 0) {
-        console.log('🚫 Modal blocked - no game start time');
-        submitScore('Anonymous');
-        return;
-    }
-    
-    const timeSinceGameStart = Date.now() - gameStartTime;
-    if (timeSinceGameStart < 1000) {
-        console.log('🚫 Modal blocked - game started too recently');
-        submitScore('Anonymous');
-        return;
-    }
-    
-    // Show the modal
+    // Set up the modal
     highScoreValueElement.textContent = score;
     playerNameInput.value = localStorage.getItem('playerName') || '';
-    playerNameInput.focus();
+    
+    // Show the modal and focus on input
     nameInputModal.classList.remove('hide');
+    
+    // Focus on input field after a brief delay to ensure modal is visible
+    setTimeout(() => {
+        playerNameInput.focus();
+        playerNameInput.select(); // Select any existing text for easy replacement
+    }, 100);
 }
 
-    // Function to submit score to leaderboard
-    async function submitScore(playerName = null) {
+// Function to submit score to leaderboard
+async function submitScore(playerName = null) {
         if (scoreSubmitted) {
             return; // Prevent duplicate submissions
         }
         
         scoreSubmitted = true;
         
+        // Calculate final player name first
+        const finalPlayerName = playerName || playerNameInput.value.trim() || 'Anonymous';
+        
+        // Hide name input modal immediately for instant response
+        nameInputModal.classList.add('hide');
+        
+        // Add optimistic update to leaderboard for instant feedback
+        addOptimisticScore(finalPlayerName, score);
+        
         try {
-            const finalPlayerName = playerName || playerNameInput.value.trim() || 'Anonymous';
-            
             // Save player name to localStorage for future games
             if (finalPlayerName !== 'Anonymous') {
                 localStorage.setItem('playerName', finalPlayerName);
@@ -694,25 +845,123 @@ function showNameInputModal() {
                     region: 'global'
                 })
             });
-
+            
             if (response.ok) {
                 const result = await response.json();
                 console.log('Score submitted successfully:', result);
-                
-                // Hide name input modal if it's showing
-                nameInputModal.classList.add('hide');
                 
                 // Refresh leaderboard to show new score
                 fetchLeaderboard(currentLeaderboardPeriod);
             } else {
                 console.error('Failed to submit score:', response.statusText);
                 scoreSubmitted = false; // Allow retry on failure
+                // Remove optimistic update on failure
+                removeOptimisticScore(finalPlayerName, score);                // Show modal again if submission failed
+                nameInputModal.classList.remove('hide');
+                playerNameInput.focus();
             }
         } catch (error) {
             console.error('Error submitting score:', error);
             scoreSubmitted = false; // Allow retry on failure
+            // Remove optimistic update on failure
+            removeOptimisticScore(finalPlayerName, score);            // Show modal again if submission failed
+            nameInputModal.classList.remove('hide');
+            playerNameInput.focus();
         }
     }
+
+// Optimistic update functions for instant leaderboard feedback
+function addOptimisticScore(playerName, score) {
+    try {
+        const tbody = document.getElementById('leaderboardBody');
+        if (!tbody) return;
+        
+        console.log('Adding optimistic score:', playerName, score);
+        
+        // Create a new row for the submitted score
+        const newRow = document.createElement('tr');
+        newRow.classList.add('optimistic-score');
+        newRow.innerHTML = `
+            <td>?</td>
+            <td>${playerName}</td>
+            <td>${score}</td>
+            <td>Just now</td>
+        `;
+        
+        // Find where to insert the new score (sorted by score descending)
+        const existingRows = Array.from(tbody.querySelectorAll('tr:not(.optimistic-score)'));
+        let insertIndex = 0;
+        
+        for (let i = 0; i < existingRows.length; i++) {
+            const existingScore = parseInt(existingRows[i].cells[2].textContent);
+            if (score > existingScore) {
+                insertIndex = i;
+                break;
+            } else {
+                insertIndex = i + 1;
+            }
+        }
+        
+        // Insert the row at the correct position
+        if (insertIndex >= existingRows.length) {
+            tbody.appendChild(newRow);
+        } else {
+            tbody.insertBefore(newRow, existingRows[insertIndex]);
+        }
+        
+        // Update ranks for all rows
+        updateOptimisticRanks();
+        
+        // Add a subtle highlight to show it's pending
+        newRow.style.backgroundColor = 'rgba(77, 238, 234, 0.2)';
+        newRow.style.border = '1px solid rgba(77, 238, 234, 0.5)';
+        
+    } catch (error) {
+        console.error('Error adding optimistic score:', error);
+    }
+}
+
+function removeOptimisticScore(playerName, score) {
+    try {
+        const tbody = document.getElementById('leaderboardBody');
+        if (!tbody) return;
+        
+        console.log('Removing optimistic score:', playerName, score);
+        
+        // Find and remove the optimistic score
+        const optimisticRows = tbody.querySelectorAll('tr.optimistic-score');
+        optimisticRows.forEach(row => {
+            const rowPlayerName = row.cells[1].textContent;
+            const rowScore = parseInt(row.cells[2].textContent);
+            if (rowPlayerName === playerName && rowScore === score) {
+                row.remove();
+            }
+        });
+        
+        // Update ranks for remaining rows
+        updateOptimisticRanks();
+        
+    } catch (error) {
+        console.error('Error removing optimistic score:', error);
+    }
+}
+
+function updateOptimisticRanks() {
+    try {
+        const tbody = document.getElementById('leaderboardBody');
+        if (!tbody) return;
+        
+        const allRows = tbody.querySelectorAll('tr');
+        allRows.forEach((row, index) => {
+            if (row.cells && row.cells[0]) {
+                row.cells[0].textContent = index + 1;
+            }
+        });
+        
+    } catch (error) {
+        console.error('Error updating optimistic ranks:', error);
+    }
+}
 
 // Leaderboard functionality
 let currentLeaderboardPeriod = 'daily';
@@ -733,7 +982,14 @@ async function fetchLeaderboard(period = 'daily') {
 
 function updateLeaderboardUI(scores) {
     const tbody = document.getElementById('leaderboardBody');
-    tbody.innerHTML = '';
+    
+    // Remove any existing optimistic scores before showing real data
+    const optimisticScores = tbody.querySelectorAll('tr.optimistic-score');
+    optimisticScores.forEach(row => row.remove());
+    
+    // Clear only non-optimistic rows
+    const realScores = tbody.querySelectorAll('tr:not(.optimistic-score)');
+    realScores.forEach(row => row.remove());
 
     scores.forEach((score, index) => {
         const row = document.createElement('tr');
@@ -775,8 +1031,7 @@ async function handleInput(key) {
         case 'w':
         case 'W':
             direction = 'Up';
-            break;
-        case 'ArrowDown':
+            break;        case 'ArrowDown':
         case 's':
         case 'S':
             direction = 'Down';
@@ -790,11 +1045,14 @@ async function handleInput(key) {
         case 'd':
         case 'D':
             direction = 'Right';
-            break;        case ' ':
+            break;
+        case ' ':
             if (gameState === 'Ready') {
-                console.log('🎮 Player pressed SPACE to start game - setting gameWasPlayed=true');
+                console.log('🎮 CONSECUTIVE MODAL DEBUG: Player pressed SPACE to start game');
+                console.log(`   Before setting flags - gameStartTime: ${gameStartTime}, gameWasPlayed: ${gameWasPlayed}`);
                 gameStartTime = Date.now();
                 gameWasPlayed = true; // Mark that player started a game
+                console.log(`   After setting flags - gameStartTime: ${gameStartTime}, gameWasPlayed: ${gameWasPlayed}`);
                 await connection.invoke('StartGame');
             } else if (gameState === 'Playing') {
                 await connection.invoke('PauseGame');
@@ -967,7 +1225,17 @@ async function handleMobileInput(direction) {
 
 // Event listeners
 document.addEventListener('keydown', (e) => {
-    e.preventDefault();
+    // Don't prevent default if user is typing in the name input field
+    if (e.target === playerNameInput) {
+        return; // Let the browser handle text input normally
+    }
+    
+    // Only prevent default for game control keys
+    const gameKeys = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'w', 'a', 's', 'd', 'W', 'A', 'S', 'D', ' '];
+    if (gameKeys.includes(e.key)) {
+        e.preventDefault();
+    }
+    
     handleInput(e.key);
 });
 

@@ -284,6 +284,27 @@ public class GamePlayTests
 | Performance | 100 concurrent users | Performance |
 | Security    | Input validation     | Security    |
 
+## 9.1 Recent Bug Fix Testing (June 4, 2025)
+
+### High Score Modal State Transition Bug
+
+**Issue**: High score modal not appearing for certain game state transitions  
+**Root Cause**: Flags only set for Ready→Playing transitions, missing other patterns
+
+**Test Files Created**:
+- `test_final_fix.html` - Standalone logic verification
+- `test_modal_race_condition_fix.html` - Race condition testing  
+- `test_race_condition_fix_verification.html` - Full game integration test
+
+**Test Scenarios Covered**:
+1. **Direct Ready→GameOver** with score 450 (should show modal)
+2. **GameOver→Playing→GameOver** with score 500 (should show modal)  
+3. **Standard Ready→Playing** transition (should still work)
+4. **Race condition protection** with 100ms delays
+5. **Flag validation** across all transition patterns
+
+**Test Results**: ✅ All scenarios pass, modal appears correctly for scores ≥ 300
+
 ## 10. Test Coverage Requirements
 
 | Component            | Minimum Coverage | Current Coverage |

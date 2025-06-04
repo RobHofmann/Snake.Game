@@ -1,7 +1,7 @@
 # Project Roadmap - Snake Game
 
-**Version:** 1.5  
-**Date:** January 21, 2025
+**Version:** 1.6  
+**Date:** June 4, 2025
 **Status:** In Progress
 
 ## Overview
@@ -10,9 +10,17 @@ A modern implementation of the classic Snake game with online features, built us
 
 ---
 
-## Recent Updates (January 21, 2025)
+## Recent Updates (June 4, 2025)
 
-### Bug Fix Accomplishments
+### Latest Bug Fix Accomplishments
+
+- ✅ **Critical Bug Fix**: Resolved high score modal not appearing for certain game state transitions
+- ✅ **Enhanced State Management**: Fixed gameStartTime and gameWasPlayed flag setting for all transition patterns  
+- ✅ **Improved UX**: High score modal now appears correctly for scores ≥ 300 regardless of server state transitions
+- ✅ **Race Condition Protection**: Added 100ms delay protection against flag reset race conditions
+- ✅ **Comprehensive Testing**: Created multiple test files to verify fix works for all transition scenarios
+
+### Previous Bug Fix Accomplishments (January 21, 2025)
 
 - ✅ **Critical Bug Fix**: Resolved speed powerup compilation error that prevented proper functionality
 - ✅ **Code Quality**: Fixed corrupted GameEngine.cs Update() method syntax
@@ -38,7 +46,7 @@ A modern implementation of the classic Snake game with online features, built us
 
 ### Phase Completion Status
 
-- **Phase 1 (Foundation)**: 97% complete
+- **Phase 1 (Foundation)**: 98% complete
 - **Phase 2 (Enhanced Gameplay)**: 68% complete (power-ups done early)
 - **Phase 3 (Online Features)**: 35% complete (leaderboard system implemented ahead of schedule)
 
