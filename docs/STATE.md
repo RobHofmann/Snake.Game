@@ -185,6 +185,22 @@
 "details": "Root cause: Malformed Update() method syntax in GameEngine.cs with missing brackets and incorrect code structure caused compilation errors. The speed boost implementation was already correct (multiplier of 1.5f affects effectiveUpdateRate calculation), but syntax errors prevented the code from compiling and running. Fixed method structure and verified all 43 unit tests pass including specific speed boost test.",
 "tested": "2025-01-21",
 "status": "FULLY RESOLVED - Speed boost now properly increases snake speed by 50%"
+},
+{
+"issue": "Powerup field visibility issue - panel not showing on initial page load",
+"fix": "RESOLVED - Modified updateUI() function to always show powerup canvas in all game states",
+"date": "2025-01-21",
+"details": "Root cause: powerup canvas visibility was conditionally controlled by powerupPanelFrozen flag in GameOver and Playing states, causing the powerup field to be hidden on initial page load and only appear after first game over. Solution: removed conditional logic and changed all three game states (Ready, GameOver, Playing) to always call powerupCanvas.classList.remove('hide'), ensuring consistent visibility across all game states.",
+"tested": "2025-01-21",
+"status": "FULLY RESOLVED - Powerup field now consistently visible across all game states"
+},
+{
+"issue": "Powerup text not showing in first game",
+"fix": "RESOLVED - Removed powerupPanelFrozen flag and integrated powerup panel updates into main game loop",
+"date": "2025-01-21",
+"details": "Root cause: powerup panel updates were blocked during gameplay by powerupPanelFrozen flag and dependent on a separate update interval. Solution: Removed powerupPanelFrozen flag and powerup panel update interval, integrated powerup panel updates directly into game loop for consistent display across all game states.",
+"tested": "2025-01-21",
+"status": "FULLY RESOLVED - Powerup text now consistently visible from initial game through all game states"
 }
 ]
 }

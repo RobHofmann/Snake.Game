@@ -246,12 +246,23 @@ async function setupSignalR() {
                 isDoublePointsActive = state.isDoublePointsActive || false;
                 speedMultiplier = state.speedMultiplier || 1.0;
                 
+                // Handle powerup panel updates - removed freeze logic
+                if (Array.isArray(state.activePowerUpEffects)) {
+                    const newActivePowerUpEffects = state.activePowerUpEffects.map(p => ({
+                        ...p,
+                        color: p.color || getPowerUpColor(p.type)
+                    }));
+                    
+                    // Update active effects and force panel redraw
+                    activePowerUpEffects = newActivePowerUpEffects;
+                    drawPowerupPanel(); // Force immediate update
+                }
+                
                 updateUI();
                 
                 // Force initial render when game starts to ensure proper display
                 if (previousGameState === 'Ready' && gameState === 'Playing') {
                     drawGame();
-                    // Don't draw powerup panel - it will be hidden anyway
                     lastGameRender = Date.now();
                     lastGameStateHash = ''; // Reset to ensure next frame gets rendered
                 }
@@ -639,7 +650,7 @@ function updateUI() {
         startScreen.classList.remove('hide');
         gameOverScreen.classList.add('hide');
         canvas.classList.add('hide');
-        powerupCanvas.classList.add('hide');
+        powerupCanvas.classList.remove('hide'); // Always show powerup canvas
         nameInputModal.classList.add('hide');
           // FIXED: Only reset flags when transitioning FROM GameOver TO Ready
         // This prevents resetting flags multiple times during consecutive games
@@ -668,14 +679,12 @@ function updateUI() {
             window.readyStateActive = true;
         } else {
             console.log('🔄 CONSECUTIVE MODAL DEBUG: Already in Ready state - skipping flag reset');
-        }} else if (gameState === 'GameOver') {
+        }    } else if (gameState === 'GameOver') {
         startScreen.classList.add('hide');
         gameOverScreen.classList.remove('hide');
         canvas.classList.remove('hide');
-        // FIXED: Consistent powerup canvas visibility - only show if not frozen (same as Playing state)
-        if (!powerupPanelFrozen) {
-            powerupCanvas.classList.remove('hide');
-        }
+        // Always show powerup canvas
+        powerupCanvas.classList.remove('hide');
         // Don't force-hide modal here - let checkForHighScore() decide whether to show it
         
         // Clear Ready state flag since we're leaving Ready state
@@ -713,10 +722,8 @@ function updateUI() {
         startScreen.classList.add('hide');
         gameOverScreen.classList.add('hide');
         canvas.classList.remove('hide');
-        // Only show powerup canvas if not frozen
-        if (!powerupPanelFrozen) {
-            powerupCanvas.classList.remove('hide');
-        }
+        // Always show powerup canvas
+        powerupCanvas.classList.remove('hide');
         nameInputModal.classList.add('hide');
         
         // Clear Ready state flag since we're leaving Ready state
@@ -1263,40 +1270,21 @@ playerNameInput.addEventListener('keypress', (e) => {
 
 // Animation loop using RAF for smooth rendering
 function gameLoop() {
+    const now = Date.now();
+    const currentGameStateHash = JSON.stringify({ snake, food, score, gameState });
+
     if (gameState !== 'Ready') {
-        const now = Date.now();
-          // Only include visually-relevant state in the hash
-        const visualState = {
-            snakePositions: snake.map(s => ({ x: s.x, y: s.y })), // Only position matters for rendering
-            food: food,
-            powerUps: powerUps.map(p => ({ // Only visual aspects of powerups
-                position: p.position,
-                type: p.type,
-                remainingExpirationTimePercentage: Math.floor(p.remainingExpirationTimePercentage * 10) / 10
-            })),
-            gameState: gameState,
-            effectsActive: { // Only active effects that change visuals
-                shield: isShieldActive,
-                doublePoints: isDoublePointsActive
-            }
-        };
-        const currentGameStateHash = JSON.stringify(visualState);
-        // Throttle main game rendering to 60 FPS max AND only when visual state changes
-        if ((now - lastGameRender >= 16) && (currentGameStateHash !== lastGameStateHash)) { // ~60 FPS + change detection
+        // Draw main game area only when needed
+        if ((now - lastGameRender >= 16) && (currentGameStateHash !== lastGameStateHash)) {
             drawGame();
             lastGameRender = now;
             lastGameStateHash = currentGameStateHash;
         }
         
-        //// Fallback: Force redraw every 2 seconds if we have powerUps but haven't drawn recently
-        //// This ensures powerUps don't get "stuck" due to change detection issues
-        //else if (powerUps && powerUps.length > 0 && (now - lastGameRender) > 2000) {
-        //    console.log('Fallback redraw triggered for powerUps');
-        //    drawGame();
-        //    lastGameRender = now;
-        //    lastGameStateHash = currentGameStateHash;
-        //}        // COMPLETELY REMOVED: No powerup panel updates in game loop
-        // The powerup panel will be updated by a separate interval timer only
+        // Always update powerup panel if we have active effects
+        if (activePowerUpEffects && activePowerUpEffects.length > 0) {
+            drawPowerupPanel();
+        }
     }
     requestAnimationFrame(gameLoop);
 }
@@ -1308,21 +1296,6 @@ async function init() {
     updateUI();
     gameLoop();
     fetchLeaderboard(); // Load initial leaderboard
-      // COMPLETELY SEPARATE POWERUP PANEL UPDATE SYSTEM
-    // This runs on its own interval, completely disconnected from all game events
-    setInterval(() => {
-        // Only update when panel is not frozen and game is not in active play
-        if (gameState !== 'Ready' && !powerupPanelFrozen) {
-            const currentEffectTypes = activePowerUpEffects.map(e => e.type).sort();
-            const lastEffectTypes = lastActivePowerUpEffects.map(e => e.type).sort();
-            const effectTypesChanged = JSON.stringify(currentEffectTypes) !== JSON.stringify(lastEffectTypes);
-            
-                drawPowerupPanel();
-                lastActivePowerUpEffects = [...activePowerUpEffects];
-        } else if (powerupPanelFrozen) {
-            console.log('⏰ INTERVAL UPDATE BLOCKED - Panel frozen during gameplay');
-        }
-    }, 250);
 }
 
 // Handle roundRect for older browsers
