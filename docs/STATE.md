@@ -494,6 +494,30 @@
 }
 },
 {
+"id": "cleanup-004",
+"description": "Remove unused Snake.Application project",
+"dependsOn": [],
+"estimatedEffort": "30 minutes",
+"priority": 1,
+"status": "Completed",
+"startDate": "2025-06-06",
+"completionDate": "2025-06-06",
+"implementation": {
+"rationale": "Snake.Application project contained only empty csproj file with Razor/MVC packages but no actual implementation code. Only referenced by Snake.UnitTests but not actually used in any test code.",
+"projectRemoved": "src/Snake.Application/Snake.Application.csproj",
+"projectReferenceRemoved": "tests/Snake.UnitTests/Snake.UnitTests.csproj",
+"verificationSteps": [
+"Confirmed no code usage of Snake.Application namespace in any C# files",
+"Removed unused project reference from Snake.UnitTests.csproj",
+"Verified Snake.UnitTests builds successfully without the reference",
+"Removed Snake.Application from solution file",
+"Deleted project directory and all contents",
+"Verified successful build and test execution"
+],
+"completionDetails": "Successfully removed Snake.Application project. All 7 remaining projects (4 source + 3 test) build successfully. All 42 unit tests pass. Solution structure is now cleaner with only projects that contain actual implementation code."
+}
+},
+{
 "id": "step-002",
 "description": "Add high score persistence to backend",
 "dependsOn": ["backend-001"],

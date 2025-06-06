@@ -22,10 +22,8 @@
   <ItemGroup>
     <Using Include="Xunit" />
   </ItemGroup>
-
   <ItemGroup>
     <ProjectReference Include="..\..\src\Snake.Domain\Snake.Domain.csproj" />
-    <ProjectReference Include="..\..\src\Snake.Application\Snake.Application.csproj" />
   </ItemGroup>
 
 </Project>
