@@ -14,18 +14,16 @@ export class EventEmitter {
             this.events[event] = [];
         }
         this.events[event].push(callback);
-    }
-
-    /**
+    }    /**
      * Emit an event with data
      * @param {string} event - Event name
-     * @param {*} data - Data to pass to listeners
+     * @param {...*} args - Arguments to pass to listeners
      */
-    emit(event, data) {
+    emit(event, ...args) {
         if (this.events[event]) {
             this.events[event].forEach(callback => {
                 try {
-                    callback(data);
+                    callback(...args);
                 } catch (error) {
                     console.error(`Error in event listener for '${event}':`, error);
                 }

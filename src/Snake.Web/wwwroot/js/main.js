@@ -147,10 +147,9 @@ class SnakeGame {
         });// UI events
         this.uiManager.on('playAgain', async () => {
             await this.signalrClient.startGame();
-        });
-
-        // High Score Manager events (NEW SYSTEM)
+        });        // High Score Manager events (NEW SYSTEM)
         this.highScoreManager.on('scoreSubmitted', async (playerName, score, gameTime) => {
+            console.log('🎯 Main.js received scoreSubmitted event:', { playerName, score, gameTime });
             try {
                 const success = await this.leaderboardManager.submitScore(playerName, score, gameTime);
                 if (success) {

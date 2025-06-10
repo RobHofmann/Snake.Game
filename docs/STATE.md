@@ -339,6 +339,12 @@
 "fix": "Removed powerupPanelFrozen logic that was incorrectly blocking powerup updates during active gameplay",
 "date": "2025-06-11",
 "details": "The powerup panel was being frozen when transitioning from Ready to Playing state, preventing players from seeing collected powerups. Removed freeze logic to allow real-time powerup display."
+},
+{
+"issue": "Score parameter lost in EventEmitter causing high score submissions to register as 0",
+"fix": "Fixed EventEmitter.emit() method to handle multiple parameters using spread operator",
+"date": "2025-06-11",
+"details": "The EventEmitter only passed the first parameter to callbacks, so when highScoreManager emitted 'scoreSubmitted' with (playerName, score, gameTime), only playerName was received. Updated emit method to use ...args to pass all parameters correctly."
 }
 ]
 }

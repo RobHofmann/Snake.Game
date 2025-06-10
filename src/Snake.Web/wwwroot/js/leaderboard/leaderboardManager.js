@@ -190,14 +190,15 @@ export class LeaderboardManager extends EventEmitter {
         } catch (error) {
             console.error('Error updating optimistic ranks:', error);
         }
-    }
-
-    /**
+    }    /**
      * Submit score to leaderboard
      * @param {string} playerName 
      * @param {number} score 
      * @returns {Promise<boolean>} Success status
-     */    async submitScore(playerName, score, gameTime) {        try {
+     */
+    async submitScore(playerName, score, gameTime) {
+        console.log('🎯 LeaderboardManager.submitScore called with:', { playerName, score, gameTime });
+        try {
             const response = await fetch(`${this.apiBaseUrl}/api/leaderboard/scores`, {
                 method: 'POST',
                 headers: {
