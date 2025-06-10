@@ -43,11 +43,16 @@ class GameState extends EventEmitter {
         const previousGameState = this.gameState;
         const previousScore = this.score;
         const previousSnakeLength = this.snake.length;
-        
-        this.gameState = serverState.gameState || 'Ready';
+          this.gameState = serverState.gameState || 'Ready';
         this.score = serverState.score || 0;
         this.snake = Array.isArray(serverState.snake) ? serverState.snake : [];
         this.food = serverState.food || { x: 0, y: 0 };
+        
+        // Clear powerup fields when game is over
+        if (this.gameState === 'GameOver' && previousGameState !== 'GameOver') {
+            console.log('🧹 GameOver: Clearing powerup fields on frontend');
+            this.clearAllPowerUps();
+        }
           // Handle game start logic
         if (this.shouldMarkGameAsStarted(previousGameState)) {
             this.markGameAsStarted();
@@ -280,6 +285,26 @@ class GameState extends EventEmitter {
     resetSubmissionState() {
         this.scoreSubmitted = false;
         this.submissionInProgress = false;
+    }
+
+    /**
+     * Clear all powerup fields when game ends
+     */
+    clearAllPowerUps() {
+        console.log('🧹 Clearing all powerup fields on frontend');
+        
+        // Clear all powerup arrays
+        this.powerUps = [];
+        this.activePowerUpEffects = [];
+        this.stablePowerUpEffects = [];
+        this.powerupDataHistory = [];
+        
+        // Reset powerup effect states
+        this.isShieldActive = false;
+        this.isDoublePointsActive = false;
+        this.speedMultiplier = 1.0;
+        
+        console.log('✅ All powerup fields cleared on frontend');
     }
 }
 

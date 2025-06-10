@@ -120,11 +120,11 @@ public class GameEngine : IGameEngine
 
         // Check wall and self collisions (skip if shield is active)
         if (!_isShieldActive)
-        {
-            // Check wall collision
+        {            // Check wall collision
             if (newHead.X < 0 || newHead.X >= BoardSize.Width ||
                 newHead.Y < 0 || newHead.Y >= BoardSize.Height)
             {
+                ClearAllPowerUps();
                 State = GameState.GameOver;
                 return false;
             }
@@ -132,6 +132,7 @@ public class GameEngine : IGameEngine
             // Check self collision
             if (_snake.Contains(newHead))
             {
+                ClearAllPowerUps();
                 State = GameState.GameOver;
                 return false;
             }
@@ -323,10 +324,9 @@ public class GameEngine : IGameEngine
                 if (!_snake.Contains(pos))
                     availablePositions.Add(pos);
             }
-        }
-
-        if (availablePositions.Count == 0)
+        }        if (availablePositions.Count == 0)
         {
+            ClearAllPowerUps();
             State = GameState.GameOver; // Game won!
             return;
         }
@@ -377,6 +377,31 @@ public class GameEngine : IGameEngine
         _nextPowerUpSpawnInterval = TimeSpan.FromSeconds(
             _random.Next((int)_minPowerUpSpawnInterval.TotalSeconds,
                         (int)_maxPowerUpSpawnInterval.TotalSeconds));
+    }
+
+    /// <summary>
+    /// Clears all powerup fields when game ends
+    /// </summary>
+    private void ClearAllPowerUps()
+    {
+        _logger?.LogDebug("🧹 GameOver: Clearing all powerup fields");
+        
+        // Clear all uncollected powerups on the board
+        _powerUps.Clear();
+        
+        // Deactivate all active powerup effects
+        foreach (var effect in _activePowerUpEffects)
+        {
+            DeactivatePowerUp(effect);
+        }
+        _activePowerUpEffects.Clear();
+        
+        // Reset all powerup state flags
+        _isShieldActive = false;
+        _isDoublePointsActive = false;
+        _speedMultiplier = 1.0f;
+        
+        _logger?.LogDebug("✅ GameOver: All powerup fields cleared");
     }
 }
 
