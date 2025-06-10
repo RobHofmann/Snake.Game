@@ -75,6 +75,12 @@ src/      domain, application, infra, persistence, api, worker
   git push
   ```
 
+## 9. Logging
+
+- Use `ILogger` for all logging.
+- Log at appropriate levels: `Debug`, `Information`, `Warning`, `Error`, `Critical`.
+- Log extensively. Make sure to add debug logs to everything. This will help us track down issues quickly.
+
 ---
 
 ### Remember
@@ -83,3 +89,4 @@ src/      domain, application, infra, persistence, api, worker
 - **Doc‑first.** `PRD.md` & `STATE.md` are authoritative.
 - No confirmation needed for routine git/CI actions.
 - No TODOs in code; open issues instead.
+- Always build in logs.

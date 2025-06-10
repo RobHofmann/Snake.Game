@@ -1,6 +1,6 @@
 {
-"version": "1.16",
-"lastUpdated": "2025-06-06",
+"version": "1.17",
+"lastUpdated": "2025-06-11",
 "projectProgress": {
 "currentPhase": {
 "name": "Phase 1 - Foundation",
@@ -285,7 +285,7 @@
 "category": "Online Features",
 "status": "Completed",
 "dependencies": ["backend-001", "ui-001"],
-"lastModified": "2025-06-03",
+"lastModified": "2025-06-11",
 "completionPercentage": 100,
 "codeLocation": {
 "path": "src/Snake.API/Controllers, src/Snake.Persistence/Repositories, src/Snake.Web/wwwroot",
@@ -327,6 +327,18 @@
 "fix": "Enhanced flag setting logic to handle all state transition patterns (Ready→GameOver, GameOver→Playing→GameOver) with robust race condition protection",
 "date": "2025-06-04",
 "details": "Fixed critical issue where gameStartTime and gameWasPlayed flags were only set for Ready→Playing transitions, missing direct Ready→GameOver and GameOver→Playing patterns. Added comprehensive flag setting for any transition to Playing state or GameOver with score > 0."
+},
+{
+"issue": "High score entries registering as 0 instead of actual score",
+"fix": "Fixed JSON property mismatch between frontend and API - score property name was inconsistent",
+"date": "2025-06-11",
+"details": "The API expected 'Score' property but frontend was sending 'score'. Added debug logging to track score submission data flow and corrected property mapping."
+},
+{
+"issue": "Powerup panel frozen and not displaying powerups during gameplay",
+"fix": "Removed powerupPanelFrozen logic that was incorrectly blocking powerup updates during active gameplay",
+"date": "2025-06-11",
+"details": "The powerup panel was being frozen when transitioning from Ready to Playing state, preventing players from seeing collected powerups. Removed freeze logic to allow real-time powerup display."
 }
 ]
 }
@@ -409,6 +421,32 @@
 }
 },
 "nextSteps": [
+{
+"id": "test-fixes-001",
+"description": "Test high score registration and powerup panel fixes",
+"dependsOn": ["leaderboard-001"],
+"estimatedEffort": "30 minutes",
+"priority": 1,
+"status": "In Progress",
+"startDate": "2025-06-11",
+"completionDate": null,
+"implementation": {
+"features": [
+"Verify scores register with correct values (not 0)",
+"Confirm powerup panel displays powerups during gameplay",
+"Test high score modal appears immediately after game over",
+"Validate score submission API request/response flow",
+"Ensure duplicate submission prevention still works"
+],
+"tasks": [
+"Play game and achieve score > 0",
+"Check console logs for score submission debugging info",
+"Verify powerup collection displays in panel",
+"Test name entry and submission flow",
+"Refresh leaderboard to confirm scores appear correctly"
+]
+}
+},
 {
 "id": "cleanup-001",
 "description": "Workspace cleanup - Remove unused Class1.cs files and build artifacts",

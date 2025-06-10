@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Snake Game - Debug</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background-color: #1a1a2e;
+            color: #eee;
+        }
+        .debug-info {
+            background-color: #16213e;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .test-button {
+            background-color: #4d79a4;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .test-button:hover {
+            background-color: #5a8ab3;
+        }
+    </style>
+</head>
+<body>
+    <div class="debug-info">
+        <h1>🧪 Snake Game Module Debug</h1>
+        <p>This page tests the modular Snake game components.</p>
+        <p>Check the console for detailed output.</p>
+        <button class="test-button" onclick="testInput()">Test Input System</button>
+        <button class="test-button" onclick="testEvents()">Test Events</button>
+    </div>
+    
+    <div class="debug-info">
+        <h2>Instructions:</h2>
+        <ul>
+            <li>Press F12 to open developer console</li>
+            <li>Press SPACE key to test space input</li>
+            <li>Press arrow keys to test direction input</li>
+            <li>Click buttons above to run manual tests</li>
+        </ul>
+    </div>
+
+    <script>
+        function testInput() {
+            console.log('🧪 Testing input system manually...');
+        }
+        
+        function testEvents() {
+            console.log('🧪 Testing event system manually...');
+        }
+    </script>
+    <script type="module" src="js/debug.js"></script>
+</body>
+</html>

@@ -12,14 +12,12 @@
             <div class="score">Score: <span id="score">0</span></div>
             <div class="status" id="gameStatus">Ready</div>
         </div>
-        
-        <canvas id="gameCanvas" class="hide"></canvas>
+          <canvas id="gameCanvas" class="hide"></canvas>
         <canvas id="powerupCanvas" class="hide powerup-panel"></canvas>
 
         <div id="startScreen" class="start-screen">
             <h2>Snake Game</h2>
-            <p>Press Space to start</p>
-            <div class="controls">
+            <p>Press Space to start</p>            <div class="controls">
                 <p>Controls:</p>
                 <ul>
                     <li>Arrow keys or WASD to move</li>
@@ -27,9 +25,7 @@
                     <li class="mobile-only">Touch: Swipe or use on-screen buttons</li>
                 </ul>
             </div>
-        </div>
-        
-        <div id="gameOver" class="game-over hide">
+        </div>        <div id="gameOver" class="game-over hide">
             <h2>Game Over!</h2>
             <p>Final Score: <span id="finalScore">0</span></p>
             <button id="playAgain">Play Again</button>
@@ -54,10 +50,9 @@
                         <tbody id="leaderboardBody"></tbody>
                     </table>
                 </div>
-            </div>
-        </div>
+            </div>        </div>
     </div>
-    
+
     <!-- High Score Name Input Modal -->
     <div id="nameInputModal" class="modal hide">
         <div class="modal-content">
@@ -71,7 +66,7 @@
             </div>
         </div>
     </div>
-    
+
     <!-- Mobile touch controls -->
     <div id="mobileControls" class="mobile-controls">
         <div class="dpad">
@@ -81,9 +76,8 @@
             <button class="dpad-button dpad-right" data-direction="right">→</button>
         </div>
     </div>
-    <button id="mobilePause" class="mobile-pause">⏸</button>
     
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.0/signalr.min.js"></script>
+    <button id="mobilePause" class="mobile-pause">⏸</button>    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.0/signalr.min.js"></script>
     <script type="module" src="js/main.js"></script>
 </body>
 </html>
