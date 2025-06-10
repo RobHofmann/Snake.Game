@@ -1,5 +1,5 @@
 {
-"version": "1.18",
+"version": "1.19",
 "lastUpdated": "2025-06-11",
 "projectProgress": {
 "currentPhase": {
@@ -7,7 +7,7 @@
 "status": "Near Completion",
 "startDate": "2025-05-30",
 "completionDate": null,
-"completionPercentage": 98,
+"completionPercentage": 100,
 "successCriteria": {
 "performance": {
 "description": "Game runs at 60 FPS on modern browsers",
@@ -689,6 +689,49 @@
 },
 {
 "description": "Update ARCHITECTURE.md with database initialization documentation",
+"status": "Completed"
+}
+]
+}
+},
+{
+"id": "powerup-display-fix",
+"description": "Fix powerup display timer bug where status indicators show stuck '1s' and don't disappear when powerups expire",
+"dependsOn": [],
+"estimatedEffort": "2 hours",
+"priority": 1,
+"status": "Completed",
+"startDate": "2025-06-11",
+"completionDate": "2025-06-11",
+"completionDetails": "Fixed Math.ceil() rounding issue in powerUpRenderer.js that caused very small remainingPercent values to display as '1s'. Replaced with Math.round() and added threshold check to hide display when < 5% remaining. Added comprehensive debug logging throughout powerup lifecycle.",
+"implementation": {
+"features": [
+"Fixed timer calculation in powerUpRenderer.js using Math.round() instead of Math.ceil()",
+"Added threshold check to hide display when remainingPercent < 0.05",
+"Added extensive debug logging to PowerUp.cs for lifecycle tracking",
+"Updated GameEngine.cs to inject logger into PowerUp constructor",
+"Added Microsoft.Extensions.Logging.Abstractions package to Snake.Domain",
+"Fixed missing ActivePowerUpEffects property in GameHub.BroadcastGameState()"
+],
+"tasks": [
+{
+"description": "Analyze powerup display bug and identify root cause",
+"status": "Completed"
+},
+{
+"description": "Fix timer calculation in powerUpRenderer.js",
+"status": "Completed"
+},
+{
+"description": "Add comprehensive logging to backend PowerUp lifecycle",
+"status": "Completed"
+},
+{
+"description": "Fix missing ActivePowerUpEffects in SignalR broadcast",
+"status": "Completed"
+},
+{
+"description": "Test end-to-end powerup display functionality",
 "status": "Completed"
 }
 ]
