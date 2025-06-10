@@ -2,12 +2,14 @@ using System.Collections.Immutable;
 using System.Collections.Generic;
 using System.Linq;
 using System;
+using Microsoft.Extensions.Logging;
 
 namespace Snake.Domain.GameEngine;
 
 public class GameEngine : IGameEngine
 {
     private readonly Random _random = new();
+    private readonly ILogger? _logger;
     private readonly float _logicUpdateRate = 1000f / 10; // 10 logic updates per second base speed
     private readonly float _renderUpdateRate = 1000f / 60; // 60 FPS target
     private float _logicAccumulator;
@@ -39,8 +41,9 @@ public class GameEngine : IGameEngine
     public IReadOnlyList<PowerUp> ActivePowerUpEffects => _activePowerUpEffects.AsReadOnly();
     public bool IsShieldActive => _isShieldActive;
     public bool IsDoublePointsActive => _isDoublePointsActive;
-    public float SpeedMultiplier => _speedMultiplier; public GameEngine()
+    public float SpeedMultiplier => _speedMultiplier;    public GameEngine(ILogger? logger = null)
     {
+        _logger = logger;
         _snake = new List<Position>();
         _powerUps = new List<PowerUp>();
         _activePowerUpEffects = new List<PowerUp>();
@@ -165,15 +168,23 @@ public class GameEngine : IGameEngine
         UpdatePowerUps(currentTickRate);
 
         return true;
-    }
-    private void UpdatePowerUps(float currentTickRate)
+    }    private void UpdatePowerUps(float currentTickRate)
     {
         // First handle all active power-up effects
         var expiredEffects = _activePowerUpEffects.Where(p => p.IsActive && !p.IsActiveEffect).ToList();
         foreach (var powerUp in expiredEffects)
         {
+            Console.WriteLine($"🕐 PowerUp {powerUp.Type} expired - removing from active effects");
             DeactivatePowerUp(powerUp);
             _activePowerUpEffects.Remove(powerUp);
+        }
+
+        // Log current active effects state for debugging
+        if (_activePowerUpEffects.Any())
+        {
+            var details = string.Join(", ", _activePowerUpEffects.Select(p => 
+                $"{p.Type}({p.RemainingEffectTimePercentage:F3})"));
+            Console.WriteLine($"🔍 Active PowerUp Effects: {_activePowerUpEffects.Count} - {details}");
         }
 
         // Then handle existing uncollected power-ups
@@ -359,7 +370,7 @@ public class GameEngine : IGameEngine
                 .ToArray();
             var type = powerUpTypes[_random.Next(powerUpTypes.Length)];
 
-            _powerUps.Add(new PowerUp(type, position));
+            _powerUps.Add(new PowerUp(type, position, null, _logger));
         }
 
         _lastPowerUpSpawnTime = DateTime.Now;

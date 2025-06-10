@@ -31,9 +31,7 @@ export class PowerUpRenderer {
         this.canvas.width = GAME_CONFIG.BOARD_SIZE.width * GAME_CONFIG.CELL_SIZE;
         this.canvas.height = 80; // Fixed height for power-up panel
         console.log('✅ PowerUpRenderer canvas initialized:', this.canvas.width, 'x', this.canvas.height);
-    }
-
-    /**
+    }    /**
      * Render the power-up effects panel
      */
     render() {
@@ -42,11 +40,36 @@ export class PowerUpRenderer {
         // Clear the powerup panel canvas
         this.clearPanel();
         
+        // Debug logging for powerup panel state
+        const hasEffects = gameState.activePowerUpEffects && gameState.activePowerUpEffects.length > 0;
+        const panelFrozen = gameState.powerupPanelFrozen;
+        
+        console.log(`🎮 PowerUp Panel Render:`, {
+            hasEffects,
+            effectCount: gameState.activePowerUpEffects?.length || 0,
+            panelFrozen,
+            gameState: gameState.gameState
+        });
+        
         // Only draw if we have active effects and panel isn't frozen
-        if (gameState.activePowerUpEffects && 
-            gameState.activePowerUpEffects.length > 0 && 
-            !gameState.powerupPanelFrozen) {
-            this.drawActivePowerUpEffects();
+        if (hasEffects && !panelFrozen) {
+            // Filter out effects with very low remaining time (< 5%)
+            const visibleEffects = gameState.activePowerUpEffects.filter(effect => {
+                const remainingPercent = effect.remainingEffectTimePercentage || 0;
+                const shouldShow = remainingPercent >= 0.05;
+                if (!shouldShow) {
+                    console.log(`🕐 PowerUp ${effect.type} hidden - remainingPercent: ${remainingPercent.toFixed(3)}`);
+                }
+                return shouldShow;
+            });
+            
+            if (visibleEffects.length > 0) {
+                // Temporarily override the gameState effects for rendering
+                const originalEffects = gameState.activePowerUpEffects;
+                gameState.activePowerUpEffects = visibleEffects;
+                this.drawActivePowerUpEffects();
+                gameState.activePowerUpEffects = originalEffects;
+            }
         }
     }
 
@@ -120,9 +143,7 @@ export class PowerUpRenderer {
         this.drawEffectProgress(effect, x, y, effectWidth);
         
         this.ctx.restore();
-    }
-
-    /**
+    }    /**
      * Draw progress bar and countdown timer for effect
      * @private
      * @param {Object} effect 
@@ -133,7 +154,18 @@ export class PowerUpRenderer {
     drawEffectProgress(effect, x, y, effectWidth) {
         const remainingPercent = effect.remainingEffectTimePercentage || 0;
         const effectDurationSeconds = effect.effectDurationInSeconds || POWER_UP_CONFIG.DURATIONS[effect.type] || 10;
-        const remainingSeconds = Math.ceil(remainingPercent * effectDurationSeconds);
+        
+        // FIX: Use Math.round() instead of Math.ceil() to prevent "1s" stuck display
+        // Add threshold check to hide display when very little time remains
+        const remainingSeconds = remainingPercent < 0.05 ? 0 : Math.round(remainingPercent * effectDurationSeconds);
+        
+        // Debug logging for powerup timer calculations
+        console.log(`🔍 PowerUp Timer Debug - ${effect.type}:`, {
+            remainingPercent: remainingPercent.toFixed(3),
+            effectDurationSeconds,
+            remainingSeconds,
+            shouldShow: remainingPercent >= 0.05
+        });
         
         // Progress bar dimensions
         const barWidth = 60;
@@ -149,10 +181,12 @@ export class PowerUpRenderer {
         this.ctx.fillStyle = effect.color;
         this.ctx.fillRect(barX, barY, barWidth * remainingPercent, barHeight);
         
-        // Draw countdown timer text
-        this.ctx.fillStyle = '#ffff00';
-        this.ctx.textAlign = 'left';
-        this.ctx.fillText(`${remainingSeconds}s`, barX + barWidth + 5, y);
+        // Only show countdown timer text if there's meaningful time remaining
+        if (remainingPercent >= 0.05 && remainingSeconds > 0) {
+            this.ctx.fillStyle = '#ffff00';
+            this.ctx.textAlign = 'left';
+            this.ctx.fillText(`${remainingSeconds}s`, barX + barWidth + 5, y);
+        }
     }
 
     /**

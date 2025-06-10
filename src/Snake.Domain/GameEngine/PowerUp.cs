@@ -1,4 +1,5 @@
 using System;
+using Microsoft.Extensions.Logging;
 
 namespace Snake.Domain.GameEngine;
 
@@ -15,6 +16,7 @@ public class PowerUp
 {
     private readonly Random _random = new();
     private readonly int _disappearTimeInSeconds;
+    private readonly ILogger? _logger;
 
     public PowerUpType Type { get; private set; }
     public Position Position { get; private set; }
@@ -56,11 +58,23 @@ public class PowerUp
         }
     }
     public DateTime? DeactivationTime { get; private set; }
-    public bool IsExpired => DateTime.UtcNow > ExpireTime;
-
-    public bool IsActiveEffect =>
-        IsActive && ActivationTime.HasValue &&
-        (DeactivationTime == null || DateTime.UtcNow <= DeactivationTime.Value);
+    public bool IsExpired => DateTime.UtcNow > ExpireTime;    public bool IsActiveEffect
+    {
+        get
+        {
+            var isActive = IsActive && ActivationTime.HasValue &&
+                          (DeactivationTime == null || DateTime.UtcNow <= DeactivationTime.Value);
+            
+            // Log when effect becomes inactive
+            if (!isActive && IsActive)
+            {
+                _logger?.LogDebug("❌ PowerUp {Type} effect EXPIRED | Now: {Now} | DeactivationTime: {DeactivationTime}", 
+                    Type, DateTime.UtcNow, DeactivationTime);
+            }
+            
+            return isActive;
+        }
+    }
 
     public int DisappearTimeInSeconds => _disappearTimeInSeconds;
     public int EffectDurationInSeconds
@@ -91,12 +105,11 @@ public class PowerUp
                 _ => "#FFFFFF"
             };
         }
-    }
-
-    public PowerUp(PowerUpType type, Position position, int? disappearTimeInSeconds = null)
+    }    public PowerUp(PowerUpType type, Position position, int? disappearTimeInSeconds = null, ILogger? logger = null)
     {
         Type = type;
         Position = position;
+        _logger = logger;
         _disappearTimeInSeconds = disappearTimeInSeconds ?? type switch
         {
             PowerUpType.SpeedBoost => _random.Next(5, 16),    // 5-15 seconds
@@ -108,9 +121,10 @@ public class PowerUp
         _spawnTime = DateTime.UtcNow;
         ExpireTime = _spawnTime.AddSeconds(_disappearTimeInSeconds);
         IsActive = false;
-    }
 
-    public void Activate()
+        _logger?.LogDebug("🔮 PowerUp {Type} spawned at {Position} | Duration: {Duration}s | Expires: {ExpireTime}", 
+            Type, Position, _disappearTimeInSeconds, ExpireTime);
+    }    public void Activate()
     {
         IsActive = true;
         ActivationTime = DateTime.UtcNow;
@@ -123,25 +137,46 @@ public class PowerUp
             // For instant effects like Shrink
             DeactivationTime = ActivationTime;
         }
+
+        _logger?.LogDebug("⚡ PowerUp {Type} ACTIVATED | Duration: {Duration}s | Deactivates: {DeactivationTime}", 
+            Type, EffectDurationInSeconds, DeactivationTime);
     }
 
     public void Deactivate()
     {
         IsActive = false;
-    }
-
-    public double RemainingEffectTimePercentage
+        _logger?.LogDebug("🛑 PowerUp {Type} DEACTIVATED | Was active for: {Duration}s", 
+            Type, ActivationTime.HasValue ? (DateTime.UtcNow - ActivationTime.Value).TotalSeconds : 0);
+    }    public double RemainingEffectTimePercentage
     {
         get
         {
             if (!IsActive || !ActivationTime.HasValue || !DeactivationTime.HasValue)
+            {
+                _logger?.LogDebug("📊 PowerUp {Type} RemainingEffectTimePercentage: 0 (inactive or missing times)", Type);
                 return 0;
+            }
 
             var now = DateTime.UtcNow;
             var totalDuration = (DeactivationTime.Value - ActivationTime.Value).TotalMilliseconds;
             var remaining = (DeactivationTime.Value - now).TotalMilliseconds;
-            if (totalDuration <= 0) return 0;
-            return Math.Clamp(remaining / totalDuration, 0, 1);
+            
+            if (totalDuration <= 0) 
+            {
+                _logger?.LogDebug("📊 PowerUp {Type} RemainingEffectTimePercentage: 0 (zero duration)", Type);
+                return 0;
+            }
+
+            var percentage = Math.Clamp(remaining / totalDuration, 0, 1);
+            
+            // Log detailed timing information, especially when percentage is very low
+            if (percentage < 0.1) // Log when less than 10% remaining
+            {
+                _logger?.LogDebug("🔍 PowerUp {Type} CRITICAL TIMING | Percentage: {Percentage:F4} | Remaining: {RemainingMs}ms | Total: {TotalMs}ms | Now: {Now} | Deactivates: {DeactivationTime}", 
+                    Type, percentage, remaining, totalDuration, now, DeactivationTime.Value);
+            }
+            
+            return percentage;
         }
     }
 

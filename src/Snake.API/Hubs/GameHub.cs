@@ -51,8 +51,7 @@ public class GameHub : Hub
     {
         _inputHandler.HandleKeyPress(key);
         await BroadcastGameState();
-    }
-    private async Task BroadcastGameState()
+    }    private async Task BroadcastGameState()
     {
         await Clients.All.SendAsync("UpdateGameState", new
         {
@@ -62,6 +61,7 @@ public class GameHub : Hub
             Score = _gameEngine.Score,
             GameState = _gameEngine.State.ToString(),
             PowerUps = _gameEngine.PowerUps,
+            ActivePowerUpEffects = _gameEngine.ActivePowerUpEffects,
             IsShieldActive = _gameEngine.IsShieldActive,
             IsDoublePointsActive = _gameEngine.IsDoublePointsActive,
             SpeedMultiplier = _gameEngine.SpeedMultiplier

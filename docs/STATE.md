@@ -1,5 +1,5 @@
 {
-"version": "1.17",
+"version": "1.18",
 "lastUpdated": "2025-06-11",
 "projectProgress": {
 "currentPhase": {
@@ -427,6 +427,43 @@
 }
 },
 "nextSteps": [
+{
+"id": "powerup-display-fix-001",
+"description": "Fix powerup status display not disappearing when powerups expire",
+"dependsOn": ["test-fixes-001"],
+"estimatedEffort": "45 minutes", 
+"priority": 1,
+"status": "In Progress",
+"startDate": "2025-06-11",
+"completionDate": null,
+"bugAnalysis": {
+"rootCause": "Math.ceil() in powerUpRenderer.js drawEffectProgress() rounds very small remainingPercent values (like 0.001) up to 1, causing '1s' display instead of 0/hidden",
+"location": "src/Snake.Web/wwwroot/js/rendering/powerUpRenderer.js line 135",
+"bugLine": "const remainingSeconds = Math.ceil(remainingPercent * effectDurationSeconds);",
+"fixStrategy": "Replace Math.ceil() with Math.round() and add threshold check to hide display when remainingPercent < 0.05",
+"additionalIssues": [
+"Backend _activePowerUpEffects cleanup appears correct - uses IsActiveEffect property",
+"Client-side stability filtering may be preserving expired effects",
+"Need extensive debug logging for powerup lifecycle tracking"
+]
+},
+"implementation": {
+"features": [
+"Fix Math.ceil() rounding issue in powerUpRenderer.js timer calculation",
+"Add threshold check to hide powerup display when < 5% remaining",
+"Add extensive debug logging for powerup state transitions",
+"Test powerup lifecycle: collection → display → countdown → disappear",
+"Verify backend expiration cleanup is working correctly"
+],
+"tasks": [
+"Replace Math.ceil() with Math.round() in drawEffectProgress method",
+"Add remainingPercent threshold check (< 0.05) to hide timer display",
+"Add debug logging for powerup timer calculations",
+"Add debug logging for backend powerup expiration",
+"Test all powerup types with different durations"
+]
+}
+},
 {
 "id": "test-fixes-001",
 "description": "Test high score registration and powerup panel fixes",
