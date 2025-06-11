@@ -2,6 +2,17 @@
 
 A modern implementation of the classic Snake game with power-ups, built with .NET 8 and SignalR for real-time gameplay.
 
+## Screenshots
+
+Main game:
+![Main game](images/1.png?raw=true "Main game")
+
+Powerups:
+![Powerups](images/2.png?raw=true "Powerups")
+
+Highscores:
+![Highscores](images/3.png?raw=true "Highscores")
+
 ## Getting Started
 
 ### Prerequisites
