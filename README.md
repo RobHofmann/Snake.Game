@@ -4,15 +4,15 @@ A modern implementation of the classic Snake game with power-ups, built with .NE
 
 ## Screenshots
 
-Main game:
+### Main game
 
 ![Main game](images/1.png?raw=true "Main game")
 
-Powerups:
+### Powerups
 
 ![Powerups](images/2.png?raw=true "Powerups")
 
-Highscores:
+### Highscores
 
 ![Highscores](images/3.png?raw=true "Highscores")
 
