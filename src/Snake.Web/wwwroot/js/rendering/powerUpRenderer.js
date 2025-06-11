@@ -14,16 +14,13 @@ export class PowerUpRenderer {
             this.canvas = canvasIdOrElement;
             this.ctx = context || (this.canvas ? this.canvas.getContext('2d') : null);
         }
-        
-        // Initialize canvas if found
+          // Initialize canvas if found
         if (this.canvas && this.ctx) {
             this.initializeCanvas();
         } else {
             console.error('❌ PowerUpRenderer: Canvas not found or context not available');
         }
-        
-        this.lastPowerupPanelUpdate = 0;
-    }    /**
+    }/**
      * Initialize canvas dimensions and settings
      */
     initializeCanvas() {
@@ -39,28 +36,19 @@ export class PowerUpRenderer {
         
         // Clear the powerup panel canvas
         this.clearPanel();
-        
-        // Debug logging for powerup panel state
+          // Debug logging for powerup panel state
         const hasEffects = gameState.activePowerUpEffects && gameState.activePowerUpEffects.length > 0;
-        const panelFrozen = gameState.powerupPanelFrozen;
         
         console.log(`🎮 PowerUp Panel Render:`, {
             hasEffects,
             effectCount: gameState.activePowerUpEffects?.length || 0,
-            panelFrozen,
             gameState: gameState.gameState
-        });
-        
-        // Only draw if we have active effects and panel isn't frozen
-        if (hasEffects && !panelFrozen) {
+        });        // Only draw if we have active effects
+        if (hasEffects) {
             // Filter out effects with very low remaining time (< 5%)
             const visibleEffects = gameState.activePowerUpEffects.filter(effect => {
                 const remainingPercent = effect.remainingEffectTimePercentage || 0;
-                const shouldShow = remainingPercent >= 0.05;
-                if (!shouldShow) {
-                    console.log(`🕐 PowerUp ${effect.type} hidden - remainingPercent: ${remainingPercent.toFixed(3)}`);
-                }
-                return shouldShow;
+                return remainingPercent >= 0.05;
             });
             
             if (visibleEffects.length > 0) {
@@ -154,18 +142,9 @@ export class PowerUpRenderer {
     drawEffectProgress(effect, x, y, effectWidth) {
         const remainingPercent = effect.remainingEffectTimePercentage || 0;
         const effectDurationSeconds = effect.effectDurationInSeconds || POWER_UP_CONFIG.DURATIONS[effect.type] || 10;
-        
-        // FIX: Use Math.round() instead of Math.ceil() to prevent "1s" stuck display
+          // FIX: Use Math.round() instead of Math.ceil() to prevent "1s" stuck display
         // Add threshold check to hide display when very little time remains
         const remainingSeconds = remainingPercent < 0.05 ? 0 : Math.round(remainingPercent * effectDurationSeconds);
-        
-        // Debug logging for powerup timer calculations
-        console.log(`🔍 PowerUp Timer Debug - ${effect.type}:`, {
-            remainingPercent: remainingPercent.toFixed(3),
-            effectDurationSeconds,
-            remainingSeconds,
-            shouldShow: remainingPercent >= 0.05
-        });
         
         // Progress bar dimensions
         const barWidth = 60;
@@ -187,13 +166,12 @@ export class PowerUpRenderer {
             this.ctx.textAlign = 'left';
             this.ctx.fillText(`${remainingSeconds}s`, barX + barWidth + 5, y);
         }
-    }
-
-    /**
-     * Check if power-up panel should be hidden
-     * @returns {boolean}
+    }    /**
+     * Clear the power-up panel
+     * @private
      */
-    shouldHidePanel() {
-        return gameState.powerupPanelFrozen;
+    clearPanel() {
+        this.ctx.fillStyle = UI_CONFIG.COLORS.BACKGROUND;
+        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
     }
 }

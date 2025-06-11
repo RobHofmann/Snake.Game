@@ -418,30 +418,16 @@ button:hover {
     .leaderboard td {
         padding: 8px 4px;
         font-size: 12px;
-    }
-    
+    }    
     .leaderboard th:nth-child(4),
     .leaderboard td:nth-child(4) {
         display: none; /* Hide date column on small screens */
     }
-    
-    /* Show mobile controls on touch devices */
-    .mobile-controls.show,
-    .mobile-pause.show {
-        display: block;
-    }
-    
-    .mobile-pause.show {
-        display: flex;
-    }
 }
 
-/* Touch device detection */
+/* Touch device detection and mobile controls */
 @media (hover: none) and (pointer: coarse) {
-    .mobile-controls {
-        display: block;
-    }
-    
+    .mobile-controls,
     .mobile-pause {
         display: flex;
     }

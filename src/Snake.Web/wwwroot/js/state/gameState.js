@@ -15,12 +15,11 @@ class GameState extends EventEmitter {
     reset() {
         this.gameState = 'Ready';
         this.score = 0;
-        this.snake = [];
-        this.food = { x: 0, y: 0 };
+        this.snake = [];        this.food = { x: 0, y: 0 };
         this.powerUps = [];
         this.activePowerUpEffects = [];
-        this.stablePowerUpEffects = [];
-        this.powerupDataHistory = [];        this.gameStartTime = 0;
+        
+        this.gameStartTime = 0;
         this.scoreSubmitted = false;
         this.gameWasPlayed = false;
         this.submissionInProgress = false; // Track if submission is currently happening
@@ -115,72 +114,16 @@ class GameState extends EventEmitter {
         } else {
             this.powerUps = [];
         }
-    }
-
-    /**
-     * Update active power-up effects with stability filtering
+    }    /**
+     * Update active power-up effects
      * @param {Array} serverEffects 
-     */    updateActivePowerUpEffects(serverEffects) {
-        // Track powerup data history for stability
-        this.powerupDataHistory.push({
-            timestamp: Date.now(),
-            length: serverEffects ? serverEffects.length : 0,
-            state: this.gameState
-        });
-
-        // Keep only last 10 entries
-        if (this.powerupDataHistory.length > 10) {
-            this.powerupDataHistory.shift();
-        }
-
-        // Apply stability filter
-        let effectsToUse = this.filterPowerUpEffects(serverEffects || []);
-        
-        this.activePowerUpEffects = effectsToUse.map(p => ({
+     */
+    updateActivePowerUpEffects(serverEffects) {
+        this.activePowerUpEffects = (serverEffects || []).map(p => ({
             ...p,
             color: p.color || this.getPowerUpColor(p.type)
         }));
-    }
-
-    /**
-     * Filter power-up effects for stability
-     * @param {Array} effects 
-     * @returns {Array}
-     */
-    filterPowerUpEffects(effects) {
-        const currentLength = effects.length;
-        const currentTime = Date.now();
-        
-        // Check recent history for inconsistencies
-        const recentEntries = this.powerupDataHistory.filter(entry => 
-            currentTime - entry.timestamp < 2000 && // Last 2 seconds
-            entry.state === this.gameState
-        );
-        
-        // Detect rapid alternation between 0 and non-zero powerups
-        if (recentEntries.length >= 4) {
-            const hasAlternation = recentEntries.some((entry, index) => {
-                if (index === 0) return false;
-                const prev = recentEntries[index - 1];
-                return (entry.length === 0 && prev.length > 0) || 
-                       (entry.length > 0 && prev.length === 0);
-            });
-            
-            if (hasAlternation && currentLength === 0) {
-                // Use stable version instead of empty array
-                return this.stablePowerUpEffects;
-            }
-        }
-        
-        // Update stable version when we get consistent non-empty data
-        if (currentLength > 0) {
-            this.stablePowerUpEffects = [...effects];
-        }
-        
-        return effects;
-    }
-
-    /**
+    }    /**
      * Get power-up color based on type
      * @param {string} type 
      * @returns {string}
@@ -292,12 +235,9 @@ class GameState extends EventEmitter {
      */
     clearAllPowerUps() {
         console.log('🧹 Clearing all powerup fields on frontend');
-        
-        // Clear all powerup arrays
+          // Clear all powerup arrays
         this.powerUps = [];
         this.activePowerUpEffects = [];
-        this.stablePowerUpEffects = [];
-        this.powerupDataHistory = [];
         
         // Reset powerup effect states
         this.isShieldActive = false;

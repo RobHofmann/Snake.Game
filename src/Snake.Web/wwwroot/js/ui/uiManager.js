@@ -82,24 +82,19 @@ export class UIManager extends EventEmitter {
         if (this.finalScoreElement) {
             this.finalScoreElement.textContent = gameState.score;
         }
-    }
-
-    /**
+    }    /**
      * Update screen visibility based on game state
      * @private
-     */    updateScreenVisibility() {
-        console.log('🎮 updateScreenVisibility called, gameState:', gameState.gameState);
+     */
+    updateScreenVisibility() {
         switch (gameState.gameState) {
             case 'Ready':
-                console.log('📺 Showing Ready state');
                 this.showReadyState();
                 break;
             case 'GameOver':
-                console.log('📺 Showing GameOver state');
                 this.showGameOverState();
                 break;
             default:
-                console.log('📺 Showing Playing state for:', gameState.gameState);
                 this.showPlayingState();
                 break;
         }
@@ -109,12 +104,10 @@ export class UIManager extends EventEmitter {
      * Show ready state UI
      * @private
      */
-    showReadyState() {
-        this.showElement(this.startScreen);
+    showReadyState() {        this.showElement(this.startScreen);
         this.hideElement(this.gameOverScreen);
         this.hideElement(this.canvas);
         this.showElement(this.powerupCanvas);
-        this.hideElement(this.nameInputModal);
 
         // Handle flag reset for new game session
         if (!this.readyStateActive) {
@@ -142,23 +135,14 @@ export class UIManager extends EventEmitter {
      * @private
      */
     showPlayingState() {
-        console.log('🎮 showPlayingState called');
-        console.log('   Canvas element:', this.canvas);
-        console.log('   PowerupCanvas element:', this.powerupCanvas);
-        console.log('   Canvas classes before:', this.canvas ? this.canvas.classList.toString() : 'null');
-        console.log('   PowerupCanvas classes before:', this.powerupCanvas ? this.powerupCanvas.classList.toString() : 'null');
-        
         this.hideElement(this.startScreen);
         this.hideElement(this.gameOverScreen);
         this.showElement(this.canvas);
         this.showElement(this.powerupCanvas);
 
-        console.log('   Canvas classes after:', this.canvas ? this.canvas.classList.toString() : 'null');
-        console.log('   PowerupCanvas classes after:', this.powerupCanvas ? this.powerupCanvas.classList.toString() : 'null');
-
         // Clear ready state flag
         this.readyStateActive = false;
-    }    /**
+    }/**
      * Show an element by removing 'hide' class
      * @param {HTMLElement} element 
      * @private
