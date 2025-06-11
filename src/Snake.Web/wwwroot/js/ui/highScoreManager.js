@@ -114,13 +114,16 @@ export class HighScoreManager extends EventEmitter {
     }    /**
      * Start a new game session
      * @param {string} gameId - Unique identifier for this game
+     * @param {string} previousGameId - Previous game ID (optional, for logging)
+     * @param {boolean} previousHasSubmitted - Previous submission state (optional, for logging)
+     * @param {boolean} previousIsSubmitting - Previous submitting state (optional, for logging)
      */
-    startNewGame(gameId) {
+    startNewGame(gameId, previousGameId = null, previousHasSubmitted = false, previousIsSubmitting = false) {
         console.log('🎮 HighScoreManager.startNewGame called with:', {
             newGameId: gameId,
-            previousGameId: this.currentGameId,
-            previousHasSubmitted: this.hasSubmittedThisGame,
-            previousIsSubmitting: this.isSubmitting
+            previousGameId: previousGameId || this.currentGameId,
+            previousHasSubmitted: previousHasSubmitted || this.hasSubmittedThisGame,
+            previousIsSubmitting: previousIsSubmitting || this.isSubmitting
         });
         
         this.currentGameId = gameId;
@@ -129,7 +132,7 @@ export class HighScoreManager extends EventEmitter {
         
         console.log('🎮 High Score Manager: New game started', gameId);
         console.log('🎮 Flags reset - hasSubmittedThisGame:', this.hasSubmittedThisGame, 'isSubmitting:', this.isSubmitting);
-    }    /**
+    }/**
      * Show the high score modal
      * @param {number} score - The achieved score
      */

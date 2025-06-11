@@ -131,12 +131,18 @@ class SnakeGame {
             if (newState.gameState === 'GameOver') {
                 this.handleGameOver(newState);
             }
-            
-            // Start new game session for high score tracking
-            if (newState.gameState === 'Playing' && !this.currentGameId) {
+              // Start new game session for high score tracking
+            if (newState.gameState === 'Playing') {
+                // Always generate a new game ID when starting to play
+                // This ensures each game session is unique for high score tracking
+                const previousGameId = this.currentGameId;
                 this.currentGameId = Date.now();
                 console.log('🎮 Main.js: Starting new game session with ID:', this.currentGameId);
-                this.highScoreManager.startNewGame(this.currentGameId);
+                
+                // Notify high score manager of new game session
+                const previousSubmissionState = this.highScoreManager.hasSubmittedThisGame;
+                const previousSubmittingState = this.highScoreManager.isSubmitting;
+                this.highScoreManager.startNewGame(this.currentGameId, previousGameId, previousSubmissionState, previousSubmittingState);
             }
             
             // Reset game ID for new games
