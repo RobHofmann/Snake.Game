@@ -182,7 +182,7 @@ src/
    - Calculates scoring per player
    - Handles PowerUp generation and management per game instance
 
-4. **PowerUp System (PowerUp.cs)**
+5. **PowerUp System (PowerUp.cs)**
    - Manages different power-up types with distinct effects:
      - SpeedBoost: Increases snake speed for 15 seconds
      - Shield: Prevents death on wall collision for 10 seconds
@@ -202,18 +202,21 @@ src/
 The system now supports multiple concurrent players through a per-connection game instance architecture:
 
 1. **GameInstanceManager Service**
+
    - Manages individual `IGameEngine` instances per SignalR connection
    - Thread-safe concurrent dictionary for storing connection ID → game engine mappings
    - Automatic cleanup when players disconnect
    - Supports unlimited concurrent players (limited by server resources)
 
 2. **Per-Connection Game State**
+
    - Each connected player gets their own `GameEngine` instance
    - Individual snake, food, power-ups, and scoring per player
    - No interference between different player sessions
    - Independent game timing and state management
 
 3. **Targeted Broadcasting**
+
    - `GameHub` sends game state updates only to the specific player (`Clients.Caller`)
    - `GameService` background loop updates all active games in parallel
    - Error handling automatically removes game instances for disconnected players

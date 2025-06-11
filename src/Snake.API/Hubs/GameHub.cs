@@ -64,10 +64,11 @@ public class GameHub : Hub
             gameEngine.ChangeDirection(dir);
             await BroadcastGameStateToPlayer(gameEngine);
         }
-    }    public async Task HandleInput(string key)
+    }
+    public async Task HandleInput(string key)
     {
         var gameEngine = _gameInstanceManager.GetGameInstance(Context.ConnectionId);
-        
+
         if (gameEngine.State == GameState.GameOver || string.IsNullOrEmpty(key))
             return;
 

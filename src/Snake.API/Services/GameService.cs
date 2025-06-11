@@ -32,20 +32,14 @@ public class GameService : BackgroundService
         while (!stoppingToken.IsCancellationRequested)
         {
             try
-            {
-                // Calculate delta time
+            {                // Calculate delta time
                 var currentTime = _stopwatch.ElapsedMilliseconds;
                 var deltaTime = currentTime - _previousFrameTime;
                 _previousFrameTime = currentTime;
 
                 // Update all active game instances
                 var activeGames = _gameInstanceManager.GetAllActiveGames().ToList();
-                
-                if (activeGames.Any())
-                {
-                    _logger.LogDebug("Updating {GameCount} active game instances", activeGames.Count);
-                }
-                
+
                 foreach (var (connectionId, gameEngine) in activeGames)
                 {
                     // Update game state
@@ -98,7 +92,7 @@ public class GameService : BackgroundService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error broadcasting game state to player {ConnectionId}", connectionId);
-            
+
             // If we can't reach the client, remove their game instance
             _gameInstanceManager.RemoveGameInstance(connectionId);
         }
