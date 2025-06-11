@@ -75,6 +75,8 @@ src/      domain, application, infra, persistence, api, worker
   git push
   ```
 
+- Only commit & push whenever the user asks you to. Do not commit on your own.
+
 ## 9. Logging
 
 - Use `ILogger` for all logging.
@@ -87,6 +89,5 @@ src/      domain, application, infra, persistence, api, worker
 
 - **Azure PaaS only.**
 - **Doc‑first.** `PRD.md` & `STATE.md` are authoritative.
-- No confirmation needed for routine git/CI actions.
-- No TODOs in code; open issues instead.
-- Always build in logs.
+- No TODOs in code; update `STATE.md` & `ROADMAP.md` instead.
+- Always build in extensive logging for debugging purposes.

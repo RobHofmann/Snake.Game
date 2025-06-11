@@ -129,6 +129,10 @@ class SnakeGame {
             
             // Handle game over specifically
             if (newState.gameState === 'GameOver') {
+                // Reset powerup panel when game is over
+                console.log('🧹 GameOver: Resetting powerup panel');
+                this.powerUpRenderer.clearPanel();
+                
                 this.handleGameOver(newState);
             }
               // Start new game session for high score tracking
@@ -144,11 +148,14 @@ class SnakeGame {
                 const previousSubmittingState = this.highScoreManager.isSubmitting;
                 this.highScoreManager.startNewGame(this.currentGameId, previousGameId, previousSubmissionState, previousSubmittingState);
             }
-            
-            // Reset game ID for new games
+              // Reset game ID for new games
             if (newState.gameState === 'Ready') {
                 console.log('🎮 Main.js: Resetting game ID (was:', this.currentGameId, ')');
                 this.currentGameId = null;
+                
+                // Also clear powerup panel for clean start
+                console.log('🧹 Ready: Clearing powerup panel for new game');
+                this.powerUpRenderer.clearPanel();
             }
         });// UI events
         this.uiManager.on('playAgain', async () => {
@@ -269,10 +276,12 @@ class SnakeGame {
                 this.lastGameRender = now;
                 this.lastGameStateHash = currentGameStateHash;
             }
-            
-            // Always update power-up panel if we have active effects
+              // Always update power-up panel based on current effects
             if (currentState.activePowerUpEffects && currentState.activePowerUpEffects.length > 0) {
                 this.powerUpRenderer.render(currentState.activePowerUpEffects);
+            } else {
+                // Clear panel if no active effects
+                this.powerUpRenderer.clearPanel();
             }
         }
         
