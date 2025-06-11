@@ -51,7 +51,8 @@ public class GameHub : Hub
     {
         _inputHandler.HandleKeyPress(key);
         await BroadcastGameState();
-    }    private async Task BroadcastGameState()
+    }
+    private async Task BroadcastGameState()
     {
         await Clients.All.SendAsync("UpdateGameState", new
         {

@@ -41,7 +41,7 @@ public class GameEngine : IGameEngine
     public IReadOnlyList<PowerUp> ActivePowerUpEffects => _activePowerUpEffects.AsReadOnly();
     public bool IsShieldActive => _isShieldActive;
     public bool IsDoublePointsActive => _isDoublePointsActive;
-    public float SpeedMultiplier => _speedMultiplier;    public GameEngine(ILogger? logger = null)
+    public float SpeedMultiplier => _speedMultiplier; public GameEngine(ILogger? logger = null)
     {
         _logger = logger;
         _snake = new List<Position>();
@@ -169,7 +169,8 @@ public class GameEngine : IGameEngine
         UpdatePowerUps(currentTickRate);
 
         return true;
-    }    private void UpdatePowerUps(float currentTickRate)
+    }
+    private void UpdatePowerUps(float currentTickRate)
     {
         // First handle all active power-up effects
         var expiredEffects = _activePowerUpEffects.Where(p => p.IsActive && !p.IsActiveEffect).ToList();
@@ -183,7 +184,7 @@ public class GameEngine : IGameEngine
         // Log current active effects state for debugging
         if (_activePowerUpEffects.Any())
         {
-            var details = string.Join(", ", _activePowerUpEffects.Select(p => 
+            var details = string.Join(", ", _activePowerUpEffects.Select(p =>
                 $"{p.Type}({p.RemainingEffectTimePercentage:F3})"));
             Console.WriteLine($"🔍 Active PowerUp Effects: {_activePowerUpEffects.Count} - {details}");
         }
@@ -324,7 +325,8 @@ public class GameEngine : IGameEngine
                 if (!_snake.Contains(pos))
                     availablePositions.Add(pos);
             }
-        }        if (availablePositions.Count == 0)
+        }
+        if (availablePositions.Count == 0)
         {
             ClearAllPowerUps();
             State = GameState.GameOver; // Game won!
@@ -385,22 +387,22 @@ public class GameEngine : IGameEngine
     private void ClearAllPowerUps()
     {
         _logger?.LogDebug("🧹 GameOver: Clearing all powerup fields");
-        
+
         // Clear all uncollected powerups on the board
         _powerUps.Clear();
-        
+
         // Deactivate all active powerup effects
         foreach (var effect in _activePowerUpEffects)
         {
             DeactivatePowerUp(effect);
         }
         _activePowerUpEffects.Clear();
-        
+
         // Reset all powerup state flags
         _isShieldActive = false;
         _isDoublePointsActive = false;
         _speedMultiplier = 1.0f;
-        
+
         _logger?.LogDebug("✅ GameOver: All powerup fields cleared");
     }
 }

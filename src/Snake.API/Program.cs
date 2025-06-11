@@ -31,7 +31,7 @@ builder.Services.AddCors(options =>
 });
 
 // Register services
-builder.Services.AddSingleton<IGameEngine>(provider => 
+builder.Services.AddSingleton<IGameEngine>(provider =>
 {
     var logger = provider.GetService<ILogger<GameEngine>>();
     return new GameEngine(logger);

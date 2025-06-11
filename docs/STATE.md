@@ -431,7 +431,7 @@
 "id": "powerup-display-fix-001",
 "description": "Fix powerup status display not disappearing when powerups expire",
 "dependsOn": ["test-fixes-001"],
-"estimatedEffort": "45 minutes", 
+"estimatedEffort": "45 minutes",
 "priority": 1,
 "status": "In Progress",
 "startDate": "2025-06-11",
@@ -439,7 +439,7 @@
 "bugAnalysis": {
 "rootCause": "Math.ceil() in powerUpRenderer.js drawEffectProgress() rounds very small remainingPercent values (like 0.001) up to 1, causing '1s' display instead of 0/hidden",
 "location": "src/Snake.Web/wwwroot/js/rendering/powerUpRenderer.js line 135",
-"bugLine": "const remainingSeconds = Math.ceil(remainingPercent * effectDurationSeconds);",
+"bugLine": "const remainingSeconds = Math.ceil(remainingPercent \* effectDurationSeconds);",
 "fixStrategy": "Replace Math.ceil() with Math.round() and add threshold check to hide display when remainingPercent < 0.05",
 "additionalIssues": [
 "Backend _activePowerUpEffects cleanup appears correct - uses IsActiveEffect property",
@@ -876,7 +876,7 @@
 "game.js",
 "game.js.backup",
 "debug.html",
-"test.html", 
+"test.html",
 "test-simple.html",
 "index-backup.html",
 "index-current.html",

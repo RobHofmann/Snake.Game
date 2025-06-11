@@ -3,14 +3,16 @@
 ## Issues Fixed
 
 ### 1. **Anonymous Name Registration Issue**
+
 - **Problem**: Player names were showing as "Anonymous" instead of entered nicknames
 - **Root Cause**: Race conditions between old UIManager and new submission systems, context binding problems in debounce functions, input timing issues
-- **Solution**: 
+- **Solution**:
   - Removed all conflicting high score submission logic from UIManager
   - Created dedicated HighScoreManager with proper context binding and robust name capture
   - Added multiple fallback mechanisms for name validation
 
 ### 2. **Duplicate Registration Issue**
+
 - **Problem**: Multiple/random duplicate entries appearing in leaderboard
 - **Root Cause**: Multiple event handlers causing duplicate submissions, insufficient submission tracking
 - **Solution**:
@@ -21,19 +23,21 @@
 ## Architecture Changes
 
 ### New HighScoreManager System (`highScoreManager.js`)
+
 ```javascript
 // Robust name capture with multiple fallbacks
 let playerName = forcedName;
 if (!playerName && this.nameInput) {
-    const inputValue = this.nameInput.value.trim();
-    if (inputValue && inputValue.length > 0) {
-        playerName = inputValue;
-    }
+  const inputValue = this.nameInput.value.trim();
+  if (inputValue && inputValue.length > 0) {
+    playerName = inputValue;
+  }
 }
 // Additional fallbacks: localStorage, Anonymous
 ```
 
 ### Enhanced GameState Tracking (`gameState.js`)
+
 ```javascript
 canSubmitScore() {
     return !this.scoreSubmitted && !this.submissionInProgress && this.gameWasPlayed && this.score > 0;
@@ -41,17 +45,26 @@ canSubmitScore() {
 ```
 
 ### Clean UIManager (`uiManager.js`)
+
 - Removed all high score submission logic
 - No longer handles modal events or score submission
 - Focuses solely on UI state management
 
 ### Updated Main.js Integration
+
 ```javascript
 // High Score Manager events (NEW SYSTEM)
-this.highScoreManager.on('scoreSubmitted', async (playerName, score, gameTime) => {
-    const success = await this.leaderboardManager.submitScore(playerName, score, gameTime);
+this.highScoreManager.on(
+  "scoreSubmitted",
+  async (playerName, score, gameTime) => {
+    const success = await this.leaderboardManager.submitScore(
+      playerName,
+      score,
+      gameTime
+    );
     // Handle success/failure appropriately
-});
+  }
+);
 ```
 
 ## Key Improvements
