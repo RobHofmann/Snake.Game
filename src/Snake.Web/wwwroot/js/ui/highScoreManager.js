@@ -24,13 +24,13 @@ export class HighScoreManager extends EventEmitter {
     /**
      * Initialize DOM elements
      * @private
-     */
-    initializeElements() {
+     */    initializeElements() {
         this.modal = document.getElementById('nameInputModal');
         this.nameInput = document.getElementById('playerNameInput');
         this.submitButton = document.getElementById('submitHighScore');
         this.skipButton = document.getElementById('skipHighScore');
         this.scoreDisplay = document.getElementById('highScoreValue');
+        this.submissionOverlay = document.getElementById('submissionOverlay');
 
         // Validate all elements exist
         const elements = {
@@ -38,7 +38,8 @@ export class HighScoreManager extends EventEmitter {
             nameInput: this.nameInput,
             submitButton: this.submitButton,
             skipButton: this.skipButton,
-            scoreDisplay: this.scoreDisplay
+            scoreDisplay: this.scoreDisplay,
+            submissionOverlay: this.submissionOverlay
         };
 
         const missing = Object.entries(elements)
@@ -176,22 +177,18 @@ export class HighScoreManager extends EventEmitter {
             const savedName = localStorage.getItem('playerName') || '';
             this.nameInput.value = savedName;
             console.log('🎮 Loaded saved name:', savedName);
-        }
-
-        // Show modal
+        }        // Show modal immediately
         this.modal.classList.remove('hide');
 
-        // Focus input after a delay
-        setTimeout(() => {
+        // Focus input immediately (using requestAnimationFrame for instant but smooth focus)
+        requestAnimationFrame(() => {
             if (this.nameInput) {
                 this.nameInput.focus();
                 this.nameInput.select();
-                console.log('🎮 Input focused, current value:', this.nameInput.value);
+                console.log('🎮 Input focused immediately, current value:', this.nameInput.value);
             }
-        }, 100);
-    }
-
-    /**
+        });
+    }    /**
      * Handle score submission
      * @param {string} forcedName - Force a specific name (e.g., 'Anonymous')
      */
@@ -206,7 +203,8 @@ export class HighScoreManager extends EventEmitter {
             return;
         }
 
-        this.isSubmitting = true;
+        this.isSubmitting = true;        // Show submission overlay instead of hiding modal
+        this.showSubmissionOverlay();
 
         // Determine final player name
         let playerName = forcedName;
@@ -242,29 +240,63 @@ export class HighScoreManager extends EventEmitter {
         }
 
         // Mark as submitted for this game
-        this.hasSubmittedThisGame = true;        // Hide modal
-        this.hideModal();
+        this.hasSubmittedThisGame = true;
 
-        // Use CAPTURED score and timing data instead of current gameState
-        const score = this.capturedScore;
-        const gameTime = this.capturedGameStartTime > 0 ? 
-            Math.floor((Date.now() - this.capturedGameStartTime) / 1000) : 0;
-        
-        console.log('🏆 Emitting score submission with CAPTURED data:', {
+        // Store submission data for completion handling
+        this.pendingSubmission = {
             playerName,
-            score,
-            gameTime,
+            score: this.capturedScore,
+            gameTime: this.capturedGameStartTime > 0 ? 
+                Math.floor((Date.now() - this.capturedGameStartTime) / 1000) : 0
+        };
+
+        console.log('🏆 Emitting score submission with CAPTURED data:', {
+            ...this.pendingSubmission,
             gameId: this.currentGameId,
             capturedScore: this.capturedScore,
             capturedGameStartTime: this.capturedGameStartTime
-        });
+        });        this.emit('scoreSubmitted', this.pendingSubmission.playerName, this.pendingSubmission.score, this.pendingSubmission.gameTime);
+    }
 
-        this.emit('scoreSubmitted', playerName, score, gameTime);
+    /**
+     * Show submission overlay
+     * @private
+     */
+    showSubmissionOverlay() {
+        if (this.submissionOverlay) {
+            this.submissionOverlay.classList.remove('hide');
+            console.log('🔄 Showing submission overlay');
+        }
+    }
 
-        // Reset submission flag after a delay
-        setTimeout(() => {
-            this.isSubmitting = false;
-        }, 1000);
+    /**
+     * Hide submission overlay
+     * @private
+     */
+    hideSubmissionOverlay() {
+        if (this.submissionOverlay) {
+            this.submissionOverlay.classList.add('hide');
+            console.log('🔄 Hiding submission overlay');
+        }
+    }
+
+    /**
+     * Complete the submission process
+     * @param {boolean} success - Whether submission was successful
+     */
+    completeSubmission(success = true) {
+        console.log('🏆 Completing submission, success:', success);
+        
+        this.isSubmitting = false;
+        this.hideSubmissionOverlay();
+        
+        if (success) {
+            // Hide modal completely on successful submission
+            this.hideModal();
+        } else {
+            // On failure, hide overlay but keep modal open for retry
+            console.log('🔄 Submission failed, keeping modal open for retry');
+        }
     }
 
     /**

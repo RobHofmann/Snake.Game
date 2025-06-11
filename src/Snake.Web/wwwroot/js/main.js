@@ -159,31 +159,38 @@ class SnakeGame {
             }
         });// UI events
         this.uiManager.on('playAgain', async () => {
-            await this.signalrClient.startGame();
-        });        // High Score Manager events (NEW SYSTEM)
+            await this.signalrClient.startGame();        });
+        
+        // High Score Manager events (NEW SYSTEM)
         this.highScoreManager.on('scoreSubmitted', async (playerName, score, gameTime) => {
             console.log('🎯 Main.js received scoreSubmitted event:', { playerName, score, gameTime });
+            
+            // Add optimistic score to leaderboard for instant feedback
+            this.leaderboardManager.addOptimisticScore(playerName, score);
+            
             try {
-                const success = await this.leaderboardManager.submitScore(playerName, score, gameTime);
-                if (success) {
-                    // Mark submission as completed
+                const success = await this.leaderboardManager.submitScore(playerName, score, gameTime);                if (success) {                    // Mark submission as completed in game state
                     gameState.completeSubmission();
+                    
+                    // Mark optimistic score as submitted (remove spinner from leaderboard row)
+                    this.leaderboardManager.markOptimisticScoreSubmitted(playerName, score);
+                    
+                    // Refresh leaderboard to show the updated scores FIRST (while spinner is still visible)
+                    await this.leaderboardManager.fetchLeaderboard();
+                    
+                    // THEN complete submission in high score manager (this will hide modal/spinner)
+                    this.highScoreManager.completeSubmission(true);
                 } else {
-                    // Handle submission failure
+                    // Handle submission failure - keep modal open for retry
+                    this.highScoreManager.completeSubmission(false);
                     this.handleSubmissionFailure(playerName, score);
                 }
             } catch (error) {
                 console.error('Error submitting score:', error);
-                // Handle submission error
+                // Handle submission error - keep modal open for retry
+                this.highScoreManager.completeSubmission(false);
                 this.handleSubmissionFailure(playerName, score);
-            }
-        });
-
-        // Leaderboard events
-        this.leaderboardManager.on('scoreSubmitted', () => {
-            // Refresh leaderboard after successful submission
-            this.leaderboardManager.fetchLeaderboard();
-        });
+            }        });
     }
 
     /**
@@ -221,23 +228,21 @@ class SnakeGame {
             scoreSubmitted: gameState.scoreSubmitted,
             currentGameId: this.currentGameId
         });
-        
-        // Refresh leaderboard
-        await this.leaderboardManager.fetchLeaderboard();
-        
-        // Show high score modal immediately for any score > 0
+          // Show high score modal immediately for any score > 0 (BEFORE leaderboard fetch for instant display)
         // The HighScoreManager will handle duplicates and validation
         if (gameState.score > 0) {
             console.log('🏆 Game over - showing high score modal for score:', gameState.score);
             
-            // Add optimistic update first for instant feedback
-            this.leaderboardManager.addOptimisticScore('...', gameState.score);
-            
-            // Show high score modal immediately
+            // Show high score modal immediately (moved before leaderboard fetch)
             this.highScoreManager.showModal(gameState.score);
         } else {
             console.log('🚫 No high score modal - score is 0');
         }
+        
+        // Refresh leaderboard in background (non-blocking)
+        this.leaderboardManager.fetchLeaderboard().catch(error => {
+            console.error('Error fetching leaderboard:', error);
+        });
     }/**
      * Handle submission failure and allow retry
      * @param {string} playerName 

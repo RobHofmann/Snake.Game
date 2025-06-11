@@ -91,8 +91,7 @@ export class LeaderboardManager extends EventEmitter {
      * @param {string} playerName 
      * @param {number} score 
      */
-    addOptimisticScore(playerName, score) {
-        try {
+    addOptimisticScore(playerName, score) {        try {
             const tbody = document.getElementById('leaderboardBody');
             if (!tbody) return;
             
@@ -100,7 +99,9 @@ export class LeaderboardManager extends EventEmitter {
             
             // Create a new row for the submitted score
             const newRow = document.createElement('tr');
-            newRow.classList.add('optimistic-score');
+            newRow.classList.add('optimistic-score', 'submitting');
+            newRow.setAttribute('data-player-name', playerName);
+            newRow.setAttribute('data-score', score);
             newRow.innerHTML = `
                 <td>?</td>
                 <td>${playerName}</td>
@@ -135,6 +136,7 @@ export class LeaderboardManager extends EventEmitter {
             // Add a subtle highlight to show it's pending
             newRow.style.backgroundColor = 'rgba(77, 238, 234, 0.2)';
             newRow.style.border = '1px solid rgba(77, 238, 234, 0.5)';
+            newRow.style.position = 'relative'; // Needed for absolute positioning of ::after content
             
         } catch (error) {
             console.error('Error adding optimistic score:', error);
@@ -168,6 +170,35 @@ export class LeaderboardManager extends EventEmitter {
             
         } catch (error) {
             console.error('Error removing optimistic score:', error);
+        }
+    }
+
+    /**
+     * Mark optimistic score as successfully submitted (remove submitting state)
+     * @param {string} playerName 
+     * @param {number} score 
+     */
+    markOptimisticScoreSubmitted(playerName, score) {
+        try {
+            const tbody = document.getElementById('leaderboardBody');
+            if (!tbody) return;
+            
+            console.log('Marking optimistic score as submitted:', playerName, score);
+            
+            // Find the optimistic score row
+            const optimisticRows = tbody.querySelectorAll('tr.optimistic-score.submitting');
+            optimisticRows.forEach(row => {
+                const rowPlayerName = row.getAttribute('data-player-name');
+                const rowScore = parseInt(row.getAttribute('data-score'));
+                if (rowPlayerName === playerName && rowScore === score) {
+                    // Remove submitting class to stop the spinner/loading animation
+                    row.classList.remove('submitting');
+                    console.log('🎯 Removed submitting state from optimistic score');
+                }
+            });
+            
+        } catch (error) {
+            console.error('Error marking optimistic score as submitted:', error);
         }
     }
 
