@@ -1,5 +1,5 @@
 {
-"version": "1.20",
+"version": "1.21",
 "lastUpdated": "2025-06-11",
 "projectProgress": {
 "currentPhase": {
@@ -771,6 +771,44 @@
 },
 {
 "description": "Test powerup clearing functionality end-to-end",
+"status": "Completed"
+}
+]
+}
+},
+{
+"id": "consecutive-games-modal-fix",
+"description": "Fix high score modal not showing on consecutive games due to game session ID reuse",
+"dependsOn": ["powerup-clear-game-over"],
+"estimatedEffort": "1 hour",
+"priority": 1,
+"status": "Completed",
+"startDate": "2025-06-11",
+"completionDate": "2025-06-11",
+"completionDetails": "Fixed issue where high score modal would only show for the first game and not subsequent games. Root cause was that game session IDs were not being regenerated for consecutive games, causing the high score manager to block the modal thinking it was the same game session.",
+"implementation": {
+"features": [
+"Modified main.js to always generate new gameId when game state transitions to Playing",
+"Updated HighScoreManager.startNewGame() method to handle optional previous state parameters",
+"Removed condition that only generated gameId when currentGameId was null",
+"Added comprehensive logging to track game session transitions",
+"Ensured each game session gets a unique ID for proper high score tracking"
+],
+"tasks": [
+{
+"description": "Analyze consecutive games modal blocking issue",
+"status": "Completed"
+},
+{
+"description": "Fix game session ID generation logic in main.js",
+"status": "Completed"
+},
+{
+"description": "Update HighScoreManager.startNewGame method signature",
+"status": "Completed"
+},
+{
+"description": "Test consecutive games modal functionality",
 "status": "Completed"
 }
 ]
