@@ -7,18 +7,18 @@ namespace Snake.API.Services;
 
 public class GameService : BackgroundService
 {
-    private readonly IGameEngine _gameEngine;
+    private readonly IGameInstanceManager _gameInstanceManager;
     private readonly IHubContext<GameHub> _hubContext;
     private readonly ILogger<GameService> _logger;
     private readonly Stopwatch _stopwatch = new();
     private float _previousFrameTime;
 
     public GameService(
-        IGameEngine gameEngine,
+        IGameInstanceManager gameInstanceManager,
         IHubContext<GameHub> hubContext,
         ILogger<GameService> logger)
     {
-        _gameEngine = gameEngine;
+        _gameInstanceManager = gameInstanceManager;
         _hubContext = hubContext;
         _logger = logger;
     }
@@ -36,52 +36,71 @@ public class GameService : BackgroundService
                 // Calculate delta time
                 var currentTime = _stopwatch.ElapsedMilliseconds;
                 var deltaTime = currentTime - _previousFrameTime;
-                _previousFrameTime = currentTime;                // Update game state
-                if (_gameEngine.State == GameState.Playing && _gameEngine.Update(deltaTime))
+                _previousFrameTime = currentTime;
+
+                // Update all active game instances
+                var activeGames = _gameInstanceManager.GetAllActiveGames().ToList();
+                
+                if (activeGames.Any())
                 {
-                    // Broadcast updated state to all clients
-                    await BroadcastGameState();
+                    _logger.LogDebug("Updating {GameCount} active game instances", activeGames.Count);
                 }
-                else if (_gameEngine.State != GameState.Playing)
+                
+                foreach (var (connectionId, gameEngine) in activeGames)
                 {
-                    // Broadcast state changes even when not actively playing
-                    if (currentTime % 1000 < 16) // Only broadcast once per second
+                    // Update game state
+                    if (gameEngine.State == GameState.Playing && gameEngine.Update(deltaTime))
                     {
-                        await BroadcastGameState();
+                        // Broadcast updated state to the specific client
+                        await BroadcastGameStateToPlayer(connectionId, gameEngine);
+                    }
+                    else if (gameEngine.State != GameState.Playing)
+                    {
+                        // Broadcast state changes even when not actively playing (less frequently)
+                        if (currentTime % 1000 < 16) // Only broadcast once per second
+                        {
+                            await BroadcastGameStateToPlayer(connectionId, gameEngine);
+                        }
                     }
                 }
 
-                // Throttle updates to avoid overloading clients
+                // Throttle updates to avoid overloading clients (60 FPS max)
                 await Task.Delay(16, stoppingToken); // ~60 FPS
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error updating game state");
-                await Task.Delay(1000, stoppingToken); // Wait a bit on error
+                _logger.LogError(ex, "Error in game loop");
+                await Task.Delay(1000, stoppingToken); // Wait before retrying
             }
         }
+
+        _logger.LogInformation("Game service stopped");
     }
-    private async Task BroadcastGameState()
+
+    private async Task BroadcastGameStateToPlayer(string connectionId, IGameEngine gameEngine)
     {
         try
         {
-            await _hubContext.Clients.All.SendAsync("UpdateGameState", new
+            await _hubContext.Clients.Client(connectionId).SendAsync("UpdateGameState", new
             {
-                BoardSize = _gameEngine.BoardSize,
-                Snake = _gameEngine.Snake,
-                Food = _gameEngine.Food,
-                PowerUps = _gameEngine.PowerUps,
-                ActivePowerUpEffects = _gameEngine.ActivePowerUpEffects,
-                Score = _gameEngine.Score,
-                GameState = _gameEngine.State.ToString(),
-                IsShieldActive = _gameEngine.IsShieldActive,
-                IsDoublePointsActive = _gameEngine.IsDoublePointsActive,
-                SpeedMultiplier = _gameEngine.SpeedMultiplier
+                BoardSize = gameEngine.BoardSize,
+                Snake = gameEngine.Snake,
+                Food = gameEngine.Food,
+                PowerUps = gameEngine.PowerUps,
+                ActivePowerUpEffects = gameEngine.ActivePowerUpEffects,
+                Score = gameEngine.Score,
+                GameState = gameEngine.State.ToString(),
+                IsShieldActive = gameEngine.IsShieldActive,
+                IsDoublePointsActive = gameEngine.IsDoublePointsActive,
+                SpeedMultiplier = gameEngine.SpeedMultiplier
             });
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error broadcasting game state");
+            _logger.LogError(ex, "Error broadcasting game state to player {ConnectionId}", connectionId);
+            
+            // If we can't reach the client, remove their game instance
+            _gameInstanceManager.RemoveGameInstance(connectionId);
         }
     }
 }

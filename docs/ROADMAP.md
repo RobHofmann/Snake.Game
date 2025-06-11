@@ -161,7 +161,7 @@ A modern implementation of the classic Snake game with online features, built us
   - Effort: 2 days
   - Completed: May 30, 2025
 
-## Phase 2: Enhanced Gameplay (Sprint 3-4) - **60% Complete**
+## Phase 2: Enhanced Gameplay (Sprint 3-4) - **85% Complete**
 
 ### Power-up System
 
@@ -604,3 +604,26 @@ This roadmap will be reviewed and updated bi-weekly during sprint planning meeti
 
 **Version:** 1.3
 **Last Updated:** June 3, 2025
+
+### Multi-Player Support
+
+- [x] Per-connection game instances
+  - Success: Multiple players can play simultaneously without interference
+  - Priority: High
+  - Effort: 1 day
+  - Completed: June 11, 2025
+- [x] Game instance management
+  - Success: Automatic cleanup on disconnect, scalable architecture
+  - Priority: High
+  - Effort: 1 day
+  - Completed: June 11, 2025
+- [x] Individual game broadcasting
+  - Success: Each player receives only their own game state updates
+  - Priority: High
+  - Effort: 0.5 days
+  - Completed: June 11, 2025
+- [x] Connection handling
+  - Success: Proper connect/disconnect lifecycle management
+  - Priority: High
+  - Effort: 0.5 days
+  - Completed: June 11, 2025

@@ -31,12 +31,7 @@ builder.Services.AddCors(options =>
 });
 
 // Register services
-builder.Services.AddSingleton<IGameEngine>(provider =>
-{
-    var logger = provider.GetService<ILogger<GameEngine>>();
-    return new GameEngine(logger);
-});
-builder.Services.AddScoped<IInputHandler, InputHandler>();
+builder.Services.AddSingleton<IGameInstanceManager, GameInstanceManager>();
 builder.Services.AddScoped<ILeaderboardRepository, CosmosDbLeaderboardRepository>();
 builder.Services.AddHostedService<GameService>();
 

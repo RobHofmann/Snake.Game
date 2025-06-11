@@ -9,8 +9,10 @@ The Snake Game is a modern web-based implementation of the classic arcade game, 
 ## Key Features
 
 - Classic snake gameplay mechanics with responsive controls
-- Real-time game updates using SignalR
+- **Multi-player support**: Multiple players can play simultaneously without interference
+- Real-time game updates using SignalR with per-connection game instances
 - High score tracking and leaderboards
+- Power-up system with visual effects and timing indicators
 - Responsive design for mobile and desktop play
 - Backend based on ASP.NET Core and Clean Architecture
 

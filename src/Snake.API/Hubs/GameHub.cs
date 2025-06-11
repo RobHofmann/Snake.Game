@@ -1,71 +1,116 @@
 using Microsoft.AspNetCore.SignalR;
 using Snake.Domain.GameEngine;
+using Snake.API.Services;
 
 namespace Snake.API.Hubs;
 
 public class GameHub : Hub
 {
-    private readonly IGameEngine _gameEngine;
-    private readonly IInputHandler _inputHandler;
+    private readonly IGameInstanceManager _gameInstanceManager;
+    private readonly ILogger<GameHub> _logger;
 
-    public GameHub(IGameEngine gameEngine, IInputHandler inputHandler)
+    public GameHub(IGameInstanceManager gameInstanceManager, ILogger<GameHub> logger)
     {
-        _gameEngine = gameEngine;
-        _inputHandler = inputHandler;
+        _gameInstanceManager = gameInstanceManager;
+        _logger = logger;
+    }
+
+    public override async Task OnConnectedAsync()
+    {
+        _logger.LogInformation("Player connected: {ConnectionId}", Context.ConnectionId);
+        await base.OnConnectedAsync();
+    }
+
+    public override async Task OnDisconnectedAsync(Exception? exception)
+    {
+        _logger.LogInformation("Player disconnected: {ConnectionId}", Context.ConnectionId);
+        _gameInstanceManager.RemoveGameInstance(Context.ConnectionId);
+        await base.OnDisconnectedAsync(exception);
     }
 
     public async Task StartGame()
     {
-        _gameEngine.Initialize(30, 30);
-        await BroadcastGameState();
+        var gameEngine = _gameInstanceManager.GetGameInstance(Context.ConnectionId);
+        gameEngine.Initialize(30, 30);
+        _logger.LogInformation("Game started for player: {ConnectionId}", Context.ConnectionId);
+        await BroadcastGameStateToPlayer(gameEngine);
     }
 
     public async Task PauseGame()
     {
-        if (_gameEngine.State == GameState.Playing)
+        var gameEngine = _gameInstanceManager.GetGameInstance(Context.ConnectionId);
+        if (gameEngine.State == GameState.Playing)
         {
-            _gameEngine.TogglePause();
-            await BroadcastGameState();
+            gameEngine.TogglePause();
+            await BroadcastGameStateToPlayer(gameEngine);
         }
     }
 
     public async Task ResumeGame()
     {
-        if (_gameEngine.State == GameState.Paused)
+        var gameEngine = _gameInstanceManager.GetGameInstance(Context.ConnectionId);
+        if (gameEngine.State == GameState.Paused)
         {
-            _gameEngine.TogglePause();
-            await BroadcastGameState();
+            gameEngine.TogglePause();
+            await BroadcastGameStateToPlayer(gameEngine);
         }
     }
 
     public async Task ChangeDirection(string direction)
     {
+        var gameEngine = _gameInstanceManager.GetGameInstance(Context.ConnectionId);
         if (Enum.TryParse<Direction>(direction, true, out var dir))
         {
-            _gameEngine.ChangeDirection(dir);
-            await BroadcastGameState();
+            gameEngine.ChangeDirection(dir);
+            await BroadcastGameStateToPlayer(gameEngine);
+        }
+    }    public async Task HandleInput(string key)
+    {
+        var gameEngine = _gameInstanceManager.GetGameInstance(Context.ConnectionId);
+        
+        if (gameEngine.State == GameState.GameOver || string.IsNullOrEmpty(key))
+            return;
+
+        key = key.ToLower();
+
+        bool handled = false;
+        if (key == " ")
+        {
+            gameEngine.TogglePause();
+            handled = true;
+        }
+        else
+        {
+            handled = key switch
+            {
+                "arrowup" or "w" => gameEngine.ChangeDirection(Direction.Up),
+                "arrowdown" or "s" => gameEngine.ChangeDirection(Direction.Down),
+                "arrowleft" or "a" => gameEngine.ChangeDirection(Direction.Left),
+                "arrowright" or "d" => gameEngine.ChangeDirection(Direction.Right),
+                _ => false
+            };
+        }
+
+        if (handled)
+        {
+            await BroadcastGameStateToPlayer(gameEngine);
         }
     }
 
-    public async Task HandleInput(string key)
+    private async Task BroadcastGameStateToPlayer(IGameEngine gameEngine)
     {
-        _inputHandler.HandleKeyPress(key);
-        await BroadcastGameState();
-    }
-    private async Task BroadcastGameState()
-    {
-        await Clients.All.SendAsync("UpdateGameState", new
+        await Clients.Caller.SendAsync("UpdateGameState", new
         {
-            BoardSize = _gameEngine.BoardSize,
-            Snake = _gameEngine.Snake,
-            Food = _gameEngine.Food,
-            Score = _gameEngine.Score,
-            GameState = _gameEngine.State.ToString(),
-            PowerUps = _gameEngine.PowerUps,
-            ActivePowerUpEffects = _gameEngine.ActivePowerUpEffects,
-            IsShieldActive = _gameEngine.IsShieldActive,
-            IsDoublePointsActive = _gameEngine.IsDoublePointsActive,
-            SpeedMultiplier = _gameEngine.SpeedMultiplier
+            BoardSize = gameEngine.BoardSize,
+            Snake = gameEngine.Snake,
+            Food = gameEngine.Food,
+            Score = gameEngine.Score,
+            GameState = gameEngine.State.ToString(),
+            PowerUps = gameEngine.PowerUps,
+            ActivePowerUpEffects = gameEngine.ActivePowerUpEffects,
+            IsShieldActive = gameEngine.IsShieldActive,
+            IsDoublePointsActive = gameEngine.IsDoublePointsActive,
+            SpeedMultiplier = gameEngine.SpeedMultiplier
         });
     }
 }

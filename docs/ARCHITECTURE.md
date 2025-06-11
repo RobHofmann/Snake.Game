@@ -154,24 +154,33 @@ src/
 
 1. **SignalR Hub (GameHub.cs)**
 
-   - Manages real-time communication with clients
-   - Handles game control commands (start, pause, resume)
-   - Processes direction changes from user input
+   - Manages real-time communication with individual clients
+   - Handles game control commands (start, pause, resume) per connection
+   - Processes direction changes from user input for specific player
+   - Uses `GameInstanceManager` to get player-specific game instances
+   - Implements connection lifecycle management (connect/disconnect)
 
-2. **Background Service (GameService.cs)**
+2. **Game Instance Manager (GameInstanceManager.cs)**
 
-   - Implements the game loop with proper delta time calculation
-   - Updates game state at regular intervals
-   - Broadcasts updated game state to connected clients
-   - Handles game timing and synchronization
+   - **NEW**: Manages individual game instances per SignalR connection
+   - Creates and stores `IGameEngine` instances in thread-safe concurrent dictionary
+   - Automatic cleanup of game instances when players disconnect
+   - Supports multiple concurrent players without interference
 
-3. **Game Engine (GameEngine.cs)**
+3. **Background Service (GameService.cs)**
 
-   - Core game logic implementation
+   - Implements game loop for all active game instances
+   - Updates each player's game state independently at regular intervals
+   - Broadcasts game state updates to specific players only
+   - Handles game timing and synchronization for multiple games in parallel
+
+4. **Game Engine (GameEngine.cs)**
+
+   - Core game logic implementation (unchanged, but now instantiated per player)
    - Manages snake movement, growth, and collision detection
-   - Tracks game state (playing, paused, game over)
-   - Calculates scoring
-   - Handles PowerUp generation and management
+   - Tracks individual game state (playing, paused, game over)
+   - Calculates scoring per player
+   - Handles PowerUp generation and management per game instance
 
 4. **PowerUp System (PowerUp.cs)**
    - Manages different power-up types with distinct effects:
@@ -185,6 +194,43 @@ src/
      - Deterministic testing capability via `SetSpawnTime` method
    - Effect duration tracking with activation/deactivation times
    - Progress percentage calculations for UI display
+
+### 2.3 Multi-Player Architecture
+
+#### Game Instance Management
+
+The system now supports multiple concurrent players through a per-connection game instance architecture:
+
+1. **GameInstanceManager Service**
+   - Manages individual `IGameEngine` instances per SignalR connection
+   - Thread-safe concurrent dictionary for storing connection ID → game engine mappings
+   - Automatic cleanup when players disconnect
+   - Supports unlimited concurrent players (limited by server resources)
+
+2. **Per-Connection Game State**
+   - Each connected player gets their own `GameEngine` instance
+   - Individual snake, food, power-ups, and scoring per player
+   - No interference between different player sessions
+   - Independent game timing and state management
+
+3. **Targeted Broadcasting**
+   - `GameHub` sends game state updates only to the specific player (`Clients.Caller`)
+   - `GameService` background loop updates all active games in parallel
+   - Error handling automatically removes game instances for disconnected players
+   - Each player receives only their own game state updates
+
+4. **Connection Lifecycle**
+   - `OnConnectedAsync`: Player connects, logged but no game instance created yet
+   - `StartGame`: Creates new game instance for the connection
+   - `OnDisconnectedAsync`: Automatic cleanup of player's game instance
+   - Graceful handling of network interruptions and reconnections
+
+#### Scalability Considerations
+
+- **Memory Usage**: Each game instance uses ~1-2KB memory
+- **CPU Usage**: Game loop processes all instances efficiently in parallel
+- **Network**: Individual broadcasting reduces unnecessary network traffic
+- **Cleanup**: Automatic resource cleanup prevents memory leaks
 
 ## 3. Data Architecture
 

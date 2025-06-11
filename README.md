@@ -35,6 +35,16 @@ dotnet run --urls="http://localhost:5080"
 3. Open your browser and navigate to:
    - Game URL: http://localhost:5080
 
+#### Multiplayer Support
+
+The game now supports **multiple concurrent players**:
+
+- Open multiple browser tabs/windows to the same URL
+- Each player gets their own independent game instance
+- Players can start, pause, and play at different times without interfering with each other
+- Each player maintains their own score and game progress
+- Perfect for testing or playing with friends on the same network
+
 #### Option 2: Running from Visual Studio
 
 1. Open `Snake.Game.sln` in Visual Studio
